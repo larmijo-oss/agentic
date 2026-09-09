@@ -1,0 +1,56 @@
+# ==============================================================================  
+# model to use at runner, one per line
+# must come before [apis] to not be confused as an entry of [apis].
+# ==============================================================================  
+runners = [  
+    { api = "cerebras", model = "qwen-3.8-27b", weight = 0.1 },
+    { api = "groq", model = "qwen/qwen3.6-27b", weight = 0.1 },
+    { api = "huggingface", model = "zai-org/GLM-5.3-Flash", weight = 0.1 },
+    { api = "huggingface", model = "Qwen/Qwen3.8-27B", weight = 0.1 },
+    { api = "huggingface", model = "moonshotai/Kimi-K3", weight = 0.1 },
+    { api = "huggingface", model = "deepseek-ai/DeepSeek-V4-Flash", weight = 0.1 },
+    { api = "huggingface", model = "tencent/Hy3", weight = 0.1 },
+    { api = "huggingface", model = "MiniMaxAI/MiniMax-M3", weight = 0.1 },
+    { api = "huggingface", model = "meta-models/Muse-Glimmer-30B", weight = 0.1 },
+    { api = "mistral", model = "ministral-14b-latest", weight = 0.8 },
+    { api = "mistral", model = "ministral-8b-latest", weight = 0.8 },
+    { api = "nvidia", model = "mistralai/mistral-nemotron", weight = 0.3 },
+    { api = "nvidia", model = "nvidia/nemotron-3.5-lightning-30b-a3b", weight = 0.1 },
+    { api = "nvidia", model = "deepseek-ai/deepseek-v4-pro-0813", weight = 0.1 },
+    { api = "nvidia", model = "deepseek-ai/deepseek-v4-flash-0731", weight = 0.1 },
+    { api = "nvidia", model = "meta/muse-glimmer-30b", weight = 0.1 },
+    { api = "nvidia", model = "moonshotai/kimi-k3", weight = 0.1 },
+    { api = "opencode", model = "big-pickle", weight = 0.2 },
+    { api = "opencode", model = "nemotron-3.5-lightning-free", weight = 0.1 },
+    { api = "opencode", model = "nemotron-3-ultra-free", weight = 0.1 },
+    { api = "opencode", model = "mimo-v2.5-free", weight = 0.1 },
+    { api = "opencode", model = "ling-3.0-flash-fin-free", weight = 0.1 },
+    { api = "openrouter", model = "openrouter/auto", weight = 0.2 },
+]
+# can be slow or throw error
+    #{ api = "mistral", model = "mistral-medium", weight = 0.8 },
+    #{ api = "nvidia", model = "google/gemma-4-31b-it", weight = 0.2 },
+    #{ api = "opencode", model = "muse-spark-1.3-contributor-free", weight = 0.1 },
+    #{ api = "opencode", model = "muse-spark-1.2-contributor-free", weight = 0.1 },
+    #{ api = "opencode", model = "deepseek-v4-flash-free", weight = 0.2 },
+
+# ==============================================================================  
+# BASEAPIs
+# ==============================================================================  
+[apis]  
+# https://inference-docs.cerebras.ai/models/overview
+cerebras = { url = "https://api.cerebras.ai", key = "CEREBRAS_API_KEY" }  
+# https://console.groq.com/docs/models
+groq = { url = "https://api.groq.com/openai", key = "GROQ_API_KEY" }
+# https://console.groq.com/docs/models
+huggingface = { url = "https://router.huggingface.co", key = "HUGGINGFACE_API_KEY" }
+# https://docs.mistral.ai/api/endpoint/models#operation-list_models_v1_models_get
+mistral = { url = "https://api.mistral.ai", key = "MISTRAL_API_KEY" }
+# https://build.nvidia.com/models?filters=nimType%3Anim_type_preview
+nvidia = { url = "https://integrate.api.nvidia.com", key = "NVIDIA_API_KEY" }
+# https://opencode.ai/docs/zen/#endpoints
+opencode = { url = "https://opencode.ai/zen", key = "OPENCODE_API_KEY" }
+# low rate limit and variable model availability
+openrouter = { url = "https://openrouter.ai/api", key = "OPENROUTER_API_KEY" }  
+# http://localhost:11433; "" removes local, wrong port to trigger exhaustion
+local = { url = "", key = "omlx" }
