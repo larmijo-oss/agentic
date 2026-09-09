@@ -1,0 +1,18 @@
+{
+  "type": "module",
+  "scripts": {
+    "build": "pnpm exec tsc && esbuild main.ts --bundle --platform=node --format=esm --external:readline/promises --external:better-sqlite3 --banner:js=\"import { createRequire } from 'module'; import { fileURLToPath } from 'url'; import { dirname } from 'path'; const require = createRequire(import.meta.url); const __filename = fileURLToPath(import.meta.url); const __dirname = dirname(__filename);\" --outfile=harnessd.js"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "fastify": "^5.12.3",
+    "http-status-codes": "^2.3.0",
+    "smol-toml": "^1.8.0",
+    "undici": "^8.10.2",
+    "zod": "^4.5.4"
+  }
+}

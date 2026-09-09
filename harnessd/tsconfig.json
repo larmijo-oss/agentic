@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    // https://aka.ms/tsconfig for definitions
+
+    // to use esbundler
+    "noEmit": true,
+    // save project graph for incremental build in tsconfig.tsbuildinfo
+    "incremental": true,
+    
+    /* Language and Environment */
+    "target": "esnext",                   // version of emitted JavaScript and compatible library
+    "module": "esnext",                   // version of generated module code
+    "moduleResolution": "bundler",        // how TypeScript looks up a file from module
+
+    /* Interop Constraints */
+    "verbatimModuleSyntax": true,         // transform and elide only imports/exports marked
+                                          // "type"; the rest are emitted per the "module" setting
+    "esModuleInterop": true,              // can import CommonJS modules; enables 'allowSyntheticDefaultImports'
+
+    /* Lazy Iterator */
+    "lib": ["ESNext"],
+    
+    /* Type Checking */
+    "strict": true,                       // enable strict type-checking options    
+    "alwaysStrict": true,                 // always enable all strict type-checking options
+    "noImplicitAny": true,
+
+    /* Null Check */
+    "strictNullChecks": true,
+    
+    /* Type safe array access */
+    "noUncheckedIndexedAccess": true,
+    
+    /* Completeness */
+    "skipLibCheck": true,                  // skip type checking all .d.ts files
+
+    /* Functions */
+    "noImplicitReturns": true,    
+    "noImplicitOverride": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+  }
+}
