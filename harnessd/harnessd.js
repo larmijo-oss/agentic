@@ -8658,7 +8658,7 @@ var require_transport = __commonJS({
       stream.flushSync();
     }
     function transport(fullOptions) {
-      const { pipeline, targets, levels, dedupe, worker = {}, caller = getCallers(), sync = false } = fullOptions;
+      const { pipeline: pipeline2, targets, levels, dedupe, worker = {}, caller = getCallers(), sync = false } = fullOptions;
       const options = {
         ...fullOptions.options
       };
@@ -8686,9 +8686,9 @@ var require_transport = __commonJS({
             };
           });
         });
-      } else if (pipeline) {
+      } else if (pipeline2) {
         target = bundlerOverrides["pino-worker"] || join(__dirname, "worker.js");
-        options.pipelines = [pipeline.map((dest) => {
+        options.pipelines = [pipeline2.map((dest) => {
           return {
             ...dest,
             target: fixTarget(dest.target)
@@ -8702,7 +8702,7 @@ var require_transport = __commonJS({
         options.dedupe = dedupe;
       }
       options.pinoWillSendConfig = true;
-      const name = targets || pipeline ? "pino.transport" : target;
+      const name = targets || pipeline2 ? "pino.transport" : target;
       return buildStream(fixTarget(target), options, worker, sync, name);
       function fixTarget(origin) {
         origin = bundlerOverrides[origin] || origin;
@@ -34434,7 +34434,7 @@ var require_form_data = __commonJS({
   "node_modules/.pnpm/light-my-request@6.6.0/node_modules/light-my-request/lib/form-data.js"(exports, module) {
     "use strict";
     var { randomUUID } = __require("node:crypto");
-    var { Readable } = __require("node:stream");
+    var { Readable: Readable2 } = __require("node:stream");
     var textEncoder;
     function isFormDataLike(payload) {
       return payload && typeof payload === "object" && typeof payload.append === "function" && typeof payload.delete === "function" && typeof payload.get === "function" && typeof payload.getAll === "function" && typeof payload.has === "function" && typeof payload.set === "function" && payload[Symbol.toStringTag] === "FormData";
@@ -34473,7 +34473,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
         }
         yield textEncoder.encode(`--${boundary}--`);
       }
-      const stream = Readable.from(asyncIterator());
+      const stream = Readable2.from(asyncIterator());
       return {
         stream,
         contentType: `multipart/form-data; boundary=${boundary}`
@@ -34488,7 +34488,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
 var require_request2 = __commonJS({
   "node_modules/.pnpm/light-my-request@6.6.0/node_modules/light-my-request/lib/request.js"(exports, module) {
     "use strict";
-    var { Readable, addAbortSignal } = __require("node:stream");
+    var { Readable: Readable2, addAbortSignal } = __require("node:stream");
     var util = __require("node:util");
     var cookie = require_dist4();
     var assert2 = __require("node:assert");
@@ -34526,7 +34526,7 @@ var require_request2 = __commonJS({
       }
     }
     function Request(options) {
-      Readable.call(this, {
+      Readable2.call(this, {
         autoDestroy: false
       });
       const parsedURL = parseURL(options.url || options.path, options.query);
@@ -34658,7 +34658,7 @@ var require_request2 = __commonJS({
         }
       });
     }
-    util.inherits(Request, Readable);
+    util.inherits(Request, Readable2);
     util.inherits(CustomRequest, Request);
     Request.prototype.destroy = function(error61) {
       if (this.destroyed || this._lightMyRequest.isDone) return;
@@ -34863,14 +34863,14 @@ var require_response = __commonJS({
   "node_modules/.pnpm/light-my-request@6.6.0/node_modules/light-my-request/lib/response.js"(exports, module) {
     "use strict";
     var http = __require("node:http");
-    var { Writable, Readable, addAbortSignal } = __require("node:stream");
+    var { Writable, Readable: Readable2, addAbortSignal } = __require("node:stream");
     var util = __require("node:util");
     var setCookie = require_set_cookie();
     function Response(req, onEnd, reject) {
       http.ServerResponse.call(this, req);
       if (req._lightMyRequest?.payloadAsStream) {
         const read = this.emit.bind(this, "drain");
-        this._lightMyRequest = { headers: null, trailers: {}, stream: new Readable({ read }) };
+        this._lightMyRequest = { headers: null, trailers: {}, stream: new Readable2({ read }) };
         const signal = req._lightMyRequest.signal;
         if (signal) {
           addAbortSignal(signal, this._lightMyRequest.stream);
@@ -35016,7 +35016,7 @@ var require_response = __commonJS({
         if (response._lightMyRequest.stream) {
           return response._lightMyRequest.stream;
         }
-        return Readable.from(response._lightMyRequest.payloadChunks);
+        return Readable2.from(response._lightMyRequest.payloadChunks);
       };
       return res;
     }
@@ -44699,7 +44699,7 @@ var require_client_h2 = __commonJS({
   "node_modules/.pnpm/undici@8.10.2/node_modules/undici/lib/dispatcher/client-h2.js"(exports, module) {
     "use strict";
     var assert2 = __require("node:assert");
-    var { pipeline } = __require("node:stream");
+    var { pipeline: pipeline2 } = __require("node:stream");
     var util = require_util3();
     var {
       RequestContentLengthMismatchError,
@@ -45871,7 +45871,7 @@ var require_client_h2 = __commonJS({
     }
     function writeStream(abort, socket, expectsPayload, h2stream, body, client, request, contentLength) {
       assert2(contentLength !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
-      const pipe2 = pipeline(
+      const pipe2 = pipeline2(
         body,
         h2stream,
         (err) => {
@@ -49179,7 +49179,7 @@ var require_readable = __commonJS({
     "use strict";
     var assert2 = __require("node:assert");
     var { addAbortListener } = __require("node:events");
-    var { Readable } = __require("node:stream");
+    var { Readable: Readable2 } = __require("node:stream");
     var { RequestAbortedError, NotSupportedError, InvalidArgumentError, AbortError } = require_errors5();
     var util = require_util3();
     var { ReadableStreamFrom } = require_util3();
@@ -49193,7 +49193,7 @@ var require_readable = __commonJS({
     var kBytesRead = /* @__PURE__ */ Symbol("kBytesRead");
     var noop = () => {
     };
-    var BodyReadable = class extends Readable {
+    var BodyReadable = class extends Readable2 {
       /**
        * @param {object} opts
        * @param {(this: Readable, size: number) => void} opts.resume
@@ -49592,7 +49592,7 @@ var require_api_request = __commonJS({
     "use strict";
     var assert2 = __require("node:assert");
     var { AsyncResource } = __require("node:async_hooks");
-    var { Readable } = require_readable();
+    var { Readable: Readable2 } = require_readable();
     var { InvalidArgumentError, RequestAbortedError } = require_errors5();
     var util = require_util3();
     function noop() {
@@ -49678,7 +49678,7 @@ var require_api_request = __commonJS({
         const parsedHeaders = headers;
         const contentType = parsedHeaders?.["content-type"];
         const contentLength = parsedHeaders?.["content-length"];
-        const res = new Readable({
+        const res = new Readable2({
           resume: () => controller.resume(),
           abort: (reason) => controller.abort(reason),
           contentType,
@@ -50054,7 +50054,7 @@ var require_api_pipeline = __commonJS({
   "node_modules/.pnpm/undici@8.10.2/node_modules/undici/lib/api/api-pipeline.js"(exports, module) {
     "use strict";
     var {
-      Readable,
+      Readable: Readable2,
       Duplex,
       PassThrough
     } = __require("node:stream");
@@ -50071,7 +50071,7 @@ var require_api_pipeline = __commonJS({
     function noop() {
     }
     var kResume = /* @__PURE__ */ Symbol("resume");
-    var PipelineRequest = class extends Readable {
+    var PipelineRequest = class extends Readable2 {
       constructor() {
         super({ autoDestroy: true });
         this[kResume] = null;
@@ -50089,7 +50089,7 @@ var require_api_pipeline = __commonJS({
         callback(err);
       }
     };
-    var PipelineResponse = class extends Readable {
+    var PipelineResponse = class extends Readable2 {
       constructor(resume) {
         super({ autoDestroy: true });
         this[kResume] = resume;
@@ -50243,7 +50243,7 @@ var require_api_pipeline = __commonJS({
         util.destroy(ret, err);
       }
     };
-    function pipeline(opts, handler) {
+    function pipeline2(opts, handler) {
       try {
         const pipelineHandler = new PipelineHandler(opts, handler);
         this.dispatch({ ...opts, body: pipelineHandler.req }, pipelineHandler);
@@ -50252,7 +50252,7 @@ var require_api_pipeline = __commonJS({
         return new PassThrough().destroy(err);
       }
     }
-    module.exports = pipeline;
+    module.exports = pipeline2;
   }
 });
 
@@ -55425,7 +55425,7 @@ var require_cache2 = __commonJS({
   "node_modules/.pnpm/undici@8.10.2/node_modules/undici/lib/interceptor/cache.js"(exports, module) {
     "use strict";
     var assert2 = __require("node:assert");
-    var { Readable } = __require("node:stream");
+    var { Readable: Readable2 } = __require("node:stream");
     var util = require_util3();
     var CacheHandler = require_cache_handler();
     var MemoryCacheStore = require_memory_cache_store();
@@ -55621,7 +55621,7 @@ var require_cache2 = __commonJS({
       return dispatch(opts, new CacheHandler(globalOpts, cacheKey, handler));
     }
     function sendCachedValue(handler, opts, result, age, context, isStale2) {
-      const stream = util.isStream(result.body) ? result.body : Readable.from(result.body ?? []);
+      const stream = util.isStream(result.body) ? result.body : Readable2.from(result.body ?? []);
       assert2(!stream.destroyed, "stream should not be destroyed");
       assert2(!stream.readableDidRead, "stream should not be readableDidRead");
       const controller = {
@@ -55880,7 +55880,7 @@ var require_decompress = __commonJS({
   "node_modules/.pnpm/undici@8.10.2/node_modules/undici/lib/interceptor/decompress.js"(exports, module) {
     "use strict";
     var { createInflate, createGunzip, createBrotliDecompress, createZstdDecompress } = __require("node:zlib");
-    var { pipeline, Transform: TransformStream2 } = __require("node:stream");
+    var { pipeline: pipeline2, Transform: TransformStream2 } = __require("node:stream");
     var { InvalidArgumentError, ResponseExceededMaxSizeError } = require_errors5();
     var DecoratorHandler = require_decorator_handler();
     var supportedEncodings = {
@@ -56062,7 +56062,7 @@ var require_decompress = __commonJS({
       #setupMultipleDecompressors(controller) {
         const lastDecompressor = this.#decompressors[this.#decompressors.length - 1];
         this.#setupDecompressorEvents(lastDecompressor, controller);
-        pipeline(this.#decompressors, (err) => {
+        pipeline2(this.#decompressors, (err) => {
           if (this.#terminated) {
             return;
           }
@@ -58866,7 +58866,7 @@ var require_fetch = __commonJS({
       subresourceSet
     } = require_constants5();
     var EE = __require("node:events");
-    var { Readable, pipeline, finished, isErrored, isReadable } = __require("node:stream");
+    var { Readable: Readable2, pipeline: pipeline2, finished, isErrored, isReadable } = __require("node:stream");
     var { addAbortListener, bufferToLowerCasedHeaderName } = require_util3();
     var { SocketError } = require_errors5();
     var { dataURLProcessor, serializeAMimeType, minimizeSupportedMimeType } = require_data_url();
@@ -59843,7 +59843,7 @@ var require_fetch = __commonJS({
                 const headersList = new HeadersList();
                 appendHeadersListFromResponseHeaders(headersList, headers, rawHeaders);
                 const location = headersList.get("location", true);
-                this.body = new Readable({ read: () => controller.resume() });
+                this.body = new Readable2({ read: () => controller.resume() });
                 const willFollow = location && request.redirect === "follow" && redirectStatusSet.has(status);
                 const decoders = [];
                 if (request.method !== "HEAD" && request.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
@@ -59891,7 +59891,7 @@ var require_fetch = __commonJS({
                   status,
                   statusText,
                   headersList,
-                  body: decoders.length ? pipeline(this.body, ...decoders, (err) => {
+                  body: decoders.length ? pipeline2(this.body, ...decoders, (err) => {
                     if (err) {
                       this.onResponseError(controller, err);
                     }
@@ -63733,7 +63733,7 @@ ${value}`;
 var require_eventsource = __commonJS({
   "node_modules/.pnpm/undici@8.10.2/node_modules/undici/lib/web/eventsource/eventsource.js"(exports, module) {
     "use strict";
-    var { pipeline } = __require("node:stream");
+    var { pipeline: pipeline2 } = __require("node:stream");
     var { fetching } = require_fetch();
     var { webidl } = require_webidl();
     var { EventSourceStream } = require_eventsource_stream();
@@ -63887,7 +63887,7 @@ var require_eventsource = __commonJS({
               ));
             }
           });
-          pipeline(
+          pipeline2(
             response.body.stream,
             eventSourceStream,
             (error61) => {
@@ -64725,724 +64725,9 @@ import { readFileSync as readFileSync2 } from "node:fs";
 // handlers.ts
 var import_http_status_codes = __toESM(require_cjs(), 1);
 var import_undici = __toESM(require_undici(), 1);
-var logOk = (request, runner, model) => {
-  console.info(`runner: ${runner}:${model}`);
-};
-var logInfo = (request, runner, model, errcode, msg) => {
-  console.info(`${errcode} |${request.ip} | ${runner}:${model} | ${msg}`);
-};
-var logErr = (request, reply, errcode, errmsg) => {
-  console.warn(`${errcode} | ${request.ip} | ${errmsg}`);
-  return reply.status(errcode).send(errmsg);
-};
-var llmprompt = async function(request, reply) {
-  const response = await routePrompt(this, request, reply, request.body);
-  if (response === null) return;
-  return reply.header("Content-Type", "text/event-stream").send(response.body);
-};
-async function routePrompt(app, request, reply, openAIRequest) {
-  const requestBody = { ...openAIRequest };
-  const client = app.client;
-  const runners = app.runners;
-  for (const runner of runners) {
-    requestBody.model = runner.model || openAIRequest.model;
-    const headers = {
-      "Content-Type": "application/json",
-      "User-Agent": "harnessd/1.0 (Node.js/Undici)"
-    };
-    if (runner.api.key) {
-      headers["Authorization"] = `Bearer ${runner.api.key}`;
-    }
-    try {
-      const fullUrl = new URL(`${runner.api.url}/v1/chat/completions`);
-      const response = await client.request({
-        origin: fullUrl.origin,
-        path: fullUrl.pathname + fullUrl.search,
-        method: request.method,
-        headers,
-        body: JSON.stringify(requestBody)
-      });
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        logInfo(
-          request,
-          runner.api.url,
-          runner.model,
-          response.statusCode,
-          "Server error. Trying another one."
-        );
-        if (response.body) {
-          response.body.destroy();
-        }
-        continue;
-      }
-      logOk(request, runner.api.url, runner.model);
-      return response;
-    } catch (error61) {
-      logInfo(
-        request,
-        runner.api.url,
-        runner.model,
-        import_http_status_codes.default.PROCESSING,
-        `Connection error: ${error61.message}. Trying another one.`
-      );
-      continue;
-    }
-  }
-  return logErr(
-    request,
-    reply,
-    import_http_status_codes.default.SERVICE_UNAVAILABLE,
-    "All available LLM providers are rate limited or offline."
-  );
-}
-
-// runners.ts
-import * as fs from "fs";
-
-// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/date.js
-var DATE_TIME_RE = /^(\d{4}-\d{2}-\d{2})?[T ]?(?:(\d{2}):\d{2}(?::\d{2}(?:\.\d+)?)?)?(Z|[-+]\d{2}:\d{2})?$/i;
-var TomlDate = class _TomlDate extends Date {
-  #hasDate = false;
-  #hasTime = false;
-  #offset = null;
-  constructor(date5) {
-    let hasDate = true;
-    let hasTime = true;
-    let offset = "Z";
-    if (typeof date5 === "string") {
-      let match = date5.match(DATE_TIME_RE);
-      if (match) {
-        if (!match[1]) {
-          hasDate = false;
-          date5 = `0000-01-01T${date5}`;
-        }
-        hasTime = !!match[2];
-        hasTime && date5[10] === " " && (date5 = date5.replace(" ", "T"));
-        if (match[2] && +match[2] > 23) {
-          date5 = "";
-        } else {
-          offset = match[3] || null;
-          date5 = date5.toUpperCase();
-          if (!offset && hasTime)
-            date5 += "Z";
-        }
-      } else {
-        date5 = "";
-      }
-    }
-    super(date5);
-    if (!isNaN(this.getTime())) {
-      this.#hasDate = hasDate;
-      this.#hasTime = hasTime;
-      this.#offset = offset;
-    }
-  }
-  isDateTime() {
-    return this.#hasDate && this.#hasTime;
-  }
-  isLocal() {
-    return !this.#hasDate || !this.#hasTime || !this.#offset;
-  }
-  isDate() {
-    return this.#hasDate && !this.#hasTime;
-  }
-  isTime() {
-    return this.#hasTime && !this.#hasDate;
-  }
-  isValid() {
-    return this.#hasDate || this.#hasTime;
-  }
-  toISOString() {
-    let iso = super.toISOString();
-    if (this.isDate())
-      return iso.slice(0, 10);
-    if (this.isTime())
-      return iso.slice(11, 23);
-    if (this.#offset === null)
-      return iso.slice(0, -1);
-    if (this.#offset === "Z")
-      return iso;
-    let offset = +this.#offset.slice(1, 3) * 60 + +this.#offset.slice(4, 6);
-    offset = this.#offset[0] === "-" ? offset : -offset;
-    let offsetDate = new Date(this.getTime() - offset * 6e4);
-    return offsetDate.toISOString().slice(0, -1) + this.#offset;
-  }
-  static wrapAsOffsetDateTime(jsDate, offset = "Z") {
-    let date5 = new _TomlDate(jsDate);
-    date5.#offset = offset;
-    return date5;
-  }
-  static wrapAsLocalDateTime(jsDate) {
-    let date5 = new _TomlDate(jsDate);
-    date5.#offset = null;
-    return date5;
-  }
-  static wrapAsLocalDate(jsDate) {
-    let date5 = new _TomlDate(jsDate);
-    date5.#hasTime = false;
-    date5.#offset = null;
-    return date5;
-  }
-  static wrapAsLocalTime(jsDate) {
-    let date5 = new _TomlDate(jsDate);
-    date5.#hasDate = false;
-    date5.#offset = null;
-    return date5;
-  }
-};
-
-// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/error.js
-function getLineColFromPtr(string4, ptr) {
-  let lines = string4.slice(0, ptr).split(/\r\n|\n|\r/g);
-  return [lines.length, lines.pop().length + 1];
-}
-function makeCodeBlock(string4, line, column) {
-  let lines = string4.split(/\r\n|\n|\r/g);
-  let codeblock = "";
-  let numberLen = (Math.log10(line + 1) | 0) + 1;
-  for (let i = line - 1; i <= line + 1; i++) {
-    let l = lines[i - 1];
-    if (!l)
-      continue;
-    codeblock += i.toString().padEnd(numberLen, " ");
-    codeblock += ":  ";
-    codeblock += l;
-    codeblock += "\n";
-    if (i === line) {
-      codeblock += " ".repeat(numberLen + column + 2);
-      codeblock += "^\n";
-    }
-  }
-  return codeblock;
-}
-var TomlError = class extends Error {
-  line;
-  column;
-  codeblock;
-  constructor(message, options) {
-    const [line, column] = getLineColFromPtr(options.toml, options.ptr);
-    const codeblock = makeCodeBlock(options.toml, line, column);
-    super(`Invalid TOML document: ${message}
-
-${codeblock}`, options);
-    this.line = line;
-    this.column = column;
-    this.codeblock = codeblock;
-  }
-};
-
-// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/util.js
-function indexOfNewline(str, start = 0) {
-  let idx = str.indexOf("\n", start);
-  if (str.charCodeAt(idx - 1) === 13)
-    idx--;
-  return idx;
-}
-function skipComment(ctx) {
-  for (; ctx.p < ctx.s.length; ctx.p++) {
-    let c = ctx.s.charCodeAt(ctx.p);
-    if (c === 10)
-      break;
-    if (c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10) {
-      ctx.p++;
-      break;
-    }
-    if (c < 32 && c !== 9 || c === 127) {
-      throw new TomlError("control characters are not allowed in comments", {
-        toml: ctx.s,
-        ptr: ctx.p
-      });
-    }
-  }
-}
-function skipVoid(ctx, banNewLines, banComments) {
-  let c;
-  while (1) {
-    while ((c = ctx.s.charCodeAt(ctx.p)) === 32 || c === 9 || !banNewLines && (c === 10 || c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10))
-      ctx.p++;
-    if (banComments || c !== 35)
-      break;
-    skipComment(ctx);
-  }
-}
-function skipUntil(ctx, sep, end) {
-  let ptr = ctx.p;
-  if (!end) {
-    ptr = indexOfNewline(ctx.s, ptr);
-    ctx.p = ptr < 0 ? ctx.s.length : ptr;
-    return;
-  }
-  for (; ctx.p < ctx.s.length; ctx.p++) {
-    let c = ctx.s.charCodeAt(ctx.p);
-    if (c === 35) {
-      skipComment(ctx);
-    } else if (c === end || c === sep) {
-      return;
-    }
-  }
-  throw new TomlError("cannot find end of structure", {
-    toml: ctx.s,
-    ptr
-  });
-}
-
-// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/primitive.js
-var INT_REGEX = /^((0x[0-9a-fA-F](_?[0-9a-fA-F])*)|(([+-]|0[ob])?\d(_?\d)*))$/;
-var FLOAT_REGEX = /^[+-]?\d(_?\d)*(\.\d(_?\d)*)?([eE][+-]?\d(_?\d)*)?$/;
-var LEADING_ZERO = /^[+-]?0[0-9_]/;
-function parseString(ctx) {
-  let start = ctx.p;
-  let c = ctx.s.charCodeAt(ctx.p++);
-  let first = c;
-  let isLiteral = c === 39;
-  let isMultiline = c === ctx.s.charCodeAt(ctx.p) && c === ctx.s.charCodeAt(ctx.p + 1);
-  if (isMultiline) {
-    if ((c = ctx.s.charCodeAt(ctx.p += 2)) === 10)
-      ctx.p++;
-    else if (c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10)
-      ctx.p += 2;
-  }
-  let parsed = "";
-  let sliceStart = ctx.p;
-  let state = 0;
-  for (; ctx.p < ctx.s.length; ctx.p++) {
-    c = ctx.s.charCodeAt(ctx.p);
-    if (isMultiline && (c === 10 || c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10)) {
-      state = state && 3;
-    } else if (c < 32 && c !== 9 || c === 127) {
-      throw new TomlError("control characters are not allowed in strings", {
-        toml: ctx.s,
-        ptr: ctx.p
-      });
-    } else if ((!state || state === 3) && c === first && (!isMultiline || ctx.s.charCodeAt(ctx.p + 1) === first && ctx.s.charCodeAt(ctx.p + 2) === first)) {
-      if (isMultiline) {
-        if (ctx.s.charCodeAt(ctx.p + 3) === first)
-          ctx.p++;
-        if (ctx.s.charCodeAt(ctx.p + 3) === first)
-          ctx.p++;
-      }
-      if (!state)
-        parsed += ctx.s.slice(sliceStart, ctx.p);
-      ctx.p += isMultiline ? 3 : 1;
-      return parsed;
-    } else if (!state) {
-      if (!isLiteral && c === 92) {
-        parsed += ctx.s.slice(sliceStart, sliceStart = ctx.p);
-        state = 1;
-      }
-    } else if (state === 1) {
-      if (c === 120 || c === 117 || c === 85) {
-        let value = 0;
-        let len = c === 120 ? 2 : c === 117 ? 4 : 8;
-        for (let j = 0; j < len; j++, ctx.p++) {
-          let hex3 = ctx.s.charCodeAt(ctx.p + 1);
-          let digit = (
-            /* 0-9 */
-            hex3 >= 48 && hex3 <= 57 ? hex3 - 48 : (
-              /* A-F */
-              hex3 >= 65 && hex3 <= 70 ? hex3 - 65 + 10 : (
-                /* a-f */
-                hex3 >= 97 && hex3 <= 102 ? hex3 - 97 + 10 : -1
-              )
-            )
-          );
-          if (digit < 0)
-            throw new TomlError("invalid non-hex character in unicode escape", { toml: ctx.s, ptr: ctx.p + 1 });
-          value = value << 4 | digit;
-        }
-        if (value < 0 || value > 1114111 || value >= 55296 && value <= 57343) {
-          throw new TomlError("invalid unicode escape", { toml: ctx.s, ptr: ctx.p });
-        }
-        parsed += String.fromCodePoint(value);
-        sliceStart = ctx.p + 1;
-        state = 0;
-      } else if (c === 32 || c === 9) {
-        state = 2;
-      } else {
-        if (c === 98)
-          parsed += "\b";
-        else if (c === 116)
-          parsed += "	";
-        else if (c === 110)
-          parsed += "\n";
-        else if (c === 102)
-          parsed += "\f";
-        else if (c === 114)
-          parsed += "\r";
-        else if (c === 101)
-          parsed += "\x1B";
-        else if (c === 34)
-          parsed += '"';
-        else if (c === 92)
-          parsed += "\\";
-        else
-          throw new TomlError("unrecognized escape sequence", { toml: ctx.s, ptr: ctx.p });
-        sliceStart = ctx.p + 1;
-        state = 0;
-      }
-    } else if (c !== 32 && c !== 9) {
-      if (state === 2) {
-        throw new TomlError("invalid escape: only line-ending whitespace may be escaped", {
-          toml: ctx.s,
-          ptr: sliceStart
-        });
-      }
-      state = !isLiteral && c === 92 ? 1 : 0;
-      sliceStart = ctx.p;
-    }
-  }
-  throw new TomlError("unfinished string", { toml: ctx.s, ptr: start });
-}
-function sliceAndTrimEndOf(ctx, start, end) {
-  let value = ctx.s.slice(start, end);
-  let commentIdx = value.indexOf("#");
-  if (commentIdx > 0) {
-    skipComment({ s: value, p: commentIdx, d: 0 });
-    value = value.slice(0, commentIdx);
-  }
-  return value.trimEnd();
-}
-function parseValue(ctx, integersAsBigInt, end) {
-  let ptr = ctx.p;
-  let err = { toml: ctx.s, ptr };
-  skipUntil(ctx, 44, end);
-  let value = sliceAndTrimEndOf(ctx, ptr, ctx.p);
-  if (!value)
-    throw new TomlError("incomplete declaration: value expected", err);
-  if (value === "-inf")
-    return -Infinity;
-  if (value === "inf" || value === "+inf")
-    return Infinity;
-  if (value === "nan" || value === "+nan" || value === "-nan")
-    return NaN;
-  if (value === "-0")
-    return integersAsBigInt ? 0n : 0;
-  let isInt = INT_REGEX.test(value);
-  if (isInt || FLOAT_REGEX.test(value)) {
-    if (LEADING_ZERO.test(value)) {
-      throw new TomlError("leading zeroes are not allowed", err);
-    }
-    value = value.replace(/_/g, "");
-    let numeric = +value;
-    if (isNaN(numeric)) {
-      throw new TomlError("invalid number", err);
-    }
-    if (isInt) {
-      if ((isInt = !Number.isSafeInteger(numeric)) && !integersAsBigInt) {
-        throw new TomlError("integer value cannot be represented losslessly", err);
-      }
-      if (isInt || integersAsBigInt === true)
-        numeric = BigInt(value);
-    }
-    return numeric;
-  }
-  const date5 = new TomlDate(value);
-  if (!date5.isValid())
-    throw new TomlError("invalid value", err);
-  return date5;
-}
-
-// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/extract.js
-function extractValue(ctx, end, integersAsBigInt) {
-  let ptr = ctx.p;
-  let c = ctx.s.charCodeAt(ptr);
-  if (c === 91 || c === 123) {
-    if (!ctx.d--) {
-      throw new TomlError("document contains excessively nested structures. aborting.", {
-        toml: ctx.s,
-        ptr
-      });
-    }
-    let value = c === 91 ? parseArray(ctx, integersAsBigInt) : parseInlineTable(ctx, integersAsBigInt);
-    ctx.d++;
-    return value;
-  }
-  if (c === 34 || c === 39) {
-    return parseString(ctx);
-  }
-  if (c === 116) {
-    if (ctx.s.charCodeAt(++ctx.p) !== 114 || ctx.s.charCodeAt(++ctx.p) !== 117 || ctx.s.charCodeAt(++ctx.p) !== 101)
-      throw new TomlError("invalid value", { toml: ctx.s, ptr });
-    ctx.p++;
-    return true;
-  }
-  if (c === 102) {
-    if (ctx.s.charCodeAt(++ctx.p) !== 97 || ctx.s.charCodeAt(++ctx.p) !== 108 || ctx.s.charCodeAt(++ctx.p) !== 115 || ctx.s.charCodeAt(++ctx.p) !== 101)
-      throw new TomlError("invalid value", { toml: ctx.s, ptr });
-    ctx.p++;
-    return false;
-  }
-  return parseValue(ctx, integersAsBigInt, end);
-}
-
-// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/struct.js
-var KEY_PART_RE = /^[a-zA-Z0-9-_]+[ \t]*$/;
-function parseKey(ctx, end = "=") {
-  let start = ctx.p;
-  let dot = start - 1;
-  let parsed = [];
-  let endPtr = ctx.s.indexOf(end, start);
-  if (endPtr < 0) {
-    throw new TomlError("incomplete key-value: cannot find end of key", {
-      toml: ctx.s,
-      ptr: start
-    });
-  }
-  do {
-    let c = ctx.s.charCodeAt(ctx.p = ++dot);
-    if (c !== 32 && c !== 9) {
-      if (c === 34 || c === 39) {
-        if (c === ctx.s.charCodeAt(ctx.p + 1) && c === ctx.s.charCodeAt(ctx.p + 2)) {
-          throw new TomlError("multiline strings are not allowed in keys", {
-            toml: ctx.s,
-            ptr: ctx.p
-          });
-        }
-        let part = parseString(ctx);
-        dot = ctx.s.indexOf(".", ctx.p);
-        let strEnd = ctx.s.slice(ctx.p, dot < 0 || dot > endPtr ? endPtr : dot);
-        let newLine = indexOfNewline(strEnd);
-        if (newLine > -1) {
-          throw new TomlError("newlines are not allowed in keys", {
-            toml: ctx.s,
-            ptr: newLine
-          });
-        }
-        if (strEnd.trimStart()) {
-          throw new TomlError("found extra tokens after the string part", {
-            toml: ctx.s,
-            ptr: ctx.p
-          });
-        }
-        if (endPtr < ctx.p) {
-          endPtr = ctx.s.indexOf(end, ctx.p);
-          if (endPtr < 0) {
-            throw new TomlError("incomplete key-value: cannot find end of key", {
-              toml: ctx.s,
-              ptr: start
-            });
-          }
-        }
-        parsed.push(part);
-      } else {
-        dot = ctx.s.indexOf(".", ctx.p);
-        let part = ctx.s.slice(ctx.p, dot < 0 || dot > endPtr ? endPtr : dot);
-        if (!KEY_PART_RE.test(part)) {
-          throw new TomlError("only letter, numbers, dashes and underscores are allowed in keys", {
-            toml: ctx.s,
-            ptr: ctx.p
-          });
-        }
-        parsed.push(part.trimEnd());
-      }
-    }
-  } while (dot + 1 && dot < endPtr);
-  ctx.p = endPtr + 1;
-  skipVoid(ctx, true, true);
-  return parsed;
-}
-function parseInlineTable(ctx, integersAsBigInt) {
-  let res = {};
-  let seen = /* @__PURE__ */ new Set();
-  let c;
-  ctx.p++;
-  while (ctx.p < ctx.s.length) {
-    skipVoid(ctx);
-    if ((c = ctx.s.charCodeAt(ctx.p)) === 125) {
-      ctx.p++;
-      return res;
-    }
-    let k;
-    let t = res;
-    let hasOwn = false;
-    let p = ctx.p;
-    let key = parseKey(ctx);
-    for (let i = 0; i < key.length; i++) {
-      if (i)
-        t = hasOwn ? t[k] : t[k] = {};
-      k = key[i];
-      if ((hasOwn = Object.hasOwn(t, k)) && (typeof t[k] !== "object" || seen.has(t[k]))) {
-        throw new TomlError("trying to redefine an already defined value", {
-          toml: ctx.s,
-          ptr: p
-        });
-      }
-      if (!hasOwn && k === "__proto__") {
-        Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
-      }
-    }
-    if (hasOwn) {
-      throw new TomlError("trying to redefine an already defined value", {
-        toml: ctx.s,
-        ptr: ctx.p
-      });
-    }
-    let value = extractValue(ctx, 125, integersAsBigInt);
-    seen.add(t[k] = value);
-    skipVoid(ctx);
-    if ((c = ctx.s.charCodeAt(ctx.p++)) === 125) {
-      return res;
-    }
-    if (c !== 44) {
-      throw new TomlError("expected comma or end of structure", { toml: ctx.s, ptr: ctx.p - 1 });
-    }
-  }
-  throw new TomlError("unfinished table encountered", {
-    toml: ctx.s,
-    ptr: ctx.p
-  });
-}
-function parseArray(ctx, integersAsBigInt) {
-  let res = [];
-  let c;
-  ctx.p++;
-  while (ctx.p < ctx.s.length) {
-    skipVoid(ctx);
-    if ((c = ctx.s.charCodeAt(ctx.p)) === 93) {
-      ctx.p++;
-      return res;
-    }
-    res.push(extractValue(ctx, 93, integersAsBigInt));
-    skipVoid(ctx);
-    if ((c = ctx.s.charCodeAt(ctx.p++)) === 93) {
-      return res;
-    }
-    if (c !== 44) {
-      throw new TomlError("expected comma or end of structure", { toml: ctx.s, ptr: ctx.p - 1 });
-    }
-  }
-  throw new TomlError("unfinished array encountered", {
-    toml: ctx.s,
-    ptr: ctx.p
-  });
-}
-
-// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/parse.js
-function peekTable(key, table, meta3, type) {
-  let t = table;
-  let m = meta3;
-  let k;
-  let hasOwn = false;
-  let state;
-  for (let i = 0; i < key.length; i++) {
-    if (i) {
-      t = hasOwn ? t[k] : t[k] = {};
-      m = (state = m[k]).c;
-      if (type === 0 && (state.t === 1 || state.t === 2)) {
-        return null;
-      }
-      if (state.t === 2) {
-        let l = t.length - 1;
-        t = t[l];
-        m = m[l].c;
-      }
-    }
-    k = key[i];
-    if ((hasOwn = Object.hasOwn(t, k)) && m[k]?.t === 0 && m[k]?.d) {
-      return null;
-    }
-    if (!hasOwn) {
-      if (k === "__proto__") {
-        Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
-        Object.defineProperty(m, k, { enumerable: true, configurable: true, writable: true });
-      }
-      m[k] = {
-        t: i < key.length - 1 && type === 2 ? 3 : type,
-        d: false,
-        i: 0,
-        c: {}
-      };
-    }
-  }
-  state = m[k];
-  if (state.t !== type && !(type === 1 && state.t === 3)) {
-    return null;
-  }
-  if (type === 2) {
-    if (!state.d) {
-      state.d = true;
-      t[k] = [];
-    }
-    t[k].push(t = {});
-    state.c[state.i++] = state = { t: 1, d: false, i: 0, c: {} };
-  }
-  if (state.d) {
-    return null;
-  }
-  state.d = true;
-  if (type === 1) {
-    t = hasOwn ? t[k] : t[k] = {};
-  } else if (type === 0 && hasOwn) {
-    return null;
-  }
-  return [k, t, state.c];
-}
-function parse(toml, { maxDepth = 1e3, integersAsBigInt } = {}) {
-  let ctx = { s: toml, p: 0, d: maxDepth };
-  let res = {};
-  let meta3 = {};
-  let tmp;
-  let tbl = res;
-  let m = meta3;
-  skipVoid(ctx);
-  while (ctx.p < toml.length) {
-    if (toml.charCodeAt(ctx.p) === 91) {
-      let isTableArray = toml.charCodeAt(++ctx.p) === 91;
-      tmp = ctx.p += +isTableArray;
-      let k = parseKey(ctx, "]");
-      if (isTableArray) {
-        if (toml.charCodeAt(ctx.p - 1) !== 93) {
-          throw new TomlError("expected end of table declaration", {
-            toml,
-            ptr: ctx.p - 1
-          });
-        }
-        ctx.p++;
-      }
-      let p = peekTable(
-        k,
-        res,
-        meta3,
-        isTableArray ? 2 : 1
-        /* Type.EXPLICIT */
-      );
-      if (!p) {
-        throw new TomlError("trying to redefine an already defined table or value", {
-          toml,
-          ptr: tmp
-        });
-      }
-      m = p[2];
-      tbl = p[1];
-    } else {
-      tmp = ctx.p;
-      let k = parseKey(ctx);
-      let p = peekTable(
-        k,
-        tbl,
-        m,
-        0
-        /* Type.DOTTED */
-      );
-      if (!p) {
-        throw new TomlError("trying to redefine an already defined table or value", {
-          toml,
-          ptr: tmp
-        });
-      }
-      p[1][p[0]] = extractValue(ctx, void 0, integersAsBigInt);
-    }
-    skipVoid(ctx, true);
-    if (ctx.p < toml.length && (tmp = toml.charCodeAt(ctx.p)) !== 10 && tmp !== 13) {
-      throw new TomlError("each key-value declaration must be followed by an end-of-line", {
-        toml,
-        ptr: ctx.p
-      });
-    }
-    skipVoid(ctx);
-  }
-  return res;
-}
+import * as readline from "readline/promises";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 
 // node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -65637,7 +64922,7 @@ __export(external_exports, {
   optional: () => optional,
   output: () => output,
   overwrite: () => _overwrite,
-  parse: () => parse3,
+  parse: () => parse2,
   parseAsync: () => parseAsync2,
   partialRecord: () => partialRecord,
   pipe: () => pipe,
@@ -65981,7 +65266,7 @@ __export(core_exports2, {
   memoizer: () => memoizer,
   mergeValues: () => mergeValues,
   meta: () => meta,
-  parse: () => parse2,
+  parse: () => parse,
   parseAsync: () => parseAsync,
   parseURLObject: () => parseURLObject,
   prettifyError: () => prettifyError,
@@ -67184,7 +66469,7 @@ var _parse = (_Err) => {
   };
   return fn;
 };
-var parse2 = /* @__PURE__ */ _parse($ZodRealError);
+var parse = /* @__PURE__ */ _parse($ZodRealError);
 var _parseAsync = (_Err) => {
   const fn = async (schema, value, _ctx, params) => {
     const ctx = _ctx ? { ..._ctx, async: true } : { async: true };
@@ -70200,10 +69485,10 @@ var $ZodFunction = /* @__PURE__ */ $constructor("$ZodFunction", (inst, def) => {
       throw new Error("implement() must be called with a function");
     }
     return Object.defineProperty(function(...args) {
-      const parsedArgs = inst._def.input ? parse2(inst._def.input, args) : args;
+      const parsedArgs = inst._def.input ? parse(inst._def.input, args) : args;
       const result = Reflect.apply(func, this, parsedArgs);
       if (inst._def.output) {
-        return parse2(inst._def.output, result);
+        return parse(inst._def.output, result);
       }
       return result;
     }, "_zod", { value: inst._zod, enumerable: false });
@@ -82073,7 +81358,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, void 0
 });
 
 // node_modules/.pnpm/zod@4.5.4/node_modules/zod/v4/classic/parse.js
-var parse3 = /* @__PURE__ */ _parse(ZodRealError);
+var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync2 = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse2 = /* @__PURE__ */ _safeParse(ZodRealError);
 var safeParseAsync2 = /* @__PURE__ */ _safeParseAsync(ZodRealError);
@@ -82210,7 +81495,7 @@ var ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
     util_exports.own(this, "~standard", value);
   },
   parse: function _parse2(data, params) {
-    return parse3(this, data, params, { callee: _parse2 });
+    return parse2(this, data, params, { callee: _parse2 });
   },
   parseAsync: async function _parseAsync2(data, params) {
     return await parseAsync2(this, data, params, { callee: _parseAsync2 });
@@ -84310,6 +83595,848 @@ function date4(params) {
   return _coercedDate(ZodDate, params);
 }
 
+// handlers.ts
+var RawMessage = external_exports.object({
+  role: external_exports.string(),
+  content: external_exports.string().nullish()
+});
+var RawRequest = external_exports.object({
+  appID: external_exports.string(),
+  model: external_exports.string(),
+  messages: external_exports.array(RawMessage),
+  stream: external_exports.boolean()
+});
+async function top(request, reply) {
+  return reply.code(200).send({
+    message: "UM EECS agentic harnessd"
+  });
+}
+var logOk = (request, runner, model) => {
+  console.info(`runner: ${runner}:${model}`);
+};
+var logInfo = (request, runner, model, errcode, msg) => {
+  console.info(`${errcode} |${request.ip} | ${runner}:${model} | ${msg}`);
+};
+var logErr = (request, reply, errcode, errmsg) => {
+  console.warn(`${errcode} | ${request.ip} | ${errmsg}`);
+  return reply.status(errcode).send(errmsg);
+};
+var llmprompt = async function(request, reply) {
+  const response = await routePrompt(this, request, reply, request.body);
+  if (response === null) return;
+  return reply.header("Content-Type", "text/event-stream").send(response.body);
+};
+async function routePrompt(app, request, reply, openAIRequest) {
+  const { appID, ...requestBody } = openAIRequest;
+  const client = app.client;
+  const runners = app.runners;
+  for (const runner of runners) {
+    requestBody.model = runner.model || openAIRequest.model;
+    const headers = {
+      "Content-Type": "application/json",
+      "User-Agent": "harnessd/1.0 (Node.js/Undici)"
+    };
+    if (runner.api.key) {
+      headers["Authorization"] = `Bearer ${runner.api.key}`;
+    }
+    try {
+      const fullUrl = new URL(`${runner.api.url}/v1/chat/completions`);
+      const response = await client.request({
+        origin: fullUrl.origin,
+        path: fullUrl.pathname + fullUrl.search,
+        method: request.method,
+        headers,
+        body: JSON.stringify(requestBody)
+      });
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        logInfo(
+          request,
+          runner.api.url,
+          runner.model,
+          response.statusCode,
+          "Server error. Trying another one."
+        );
+        if (response.body) {
+          response.body.destroy();
+        }
+        continue;
+      }
+      logOk(request, runner.api.url, runner.model);
+      return response;
+    } catch (error61) {
+      logInfo(
+        request,
+        runner.api.url,
+        runner.model,
+        import_http_status_codes.default.PROCESSING,
+        `Connection error: ${error61.message}. Trying another one.`
+      );
+      continue;
+    }
+  }
+  return logErr(
+    request,
+    reply,
+    import_http_status_codes.default.SERVICE_UNAVAILABLE,
+    "All available LLM providers are rate limited or offline."
+  );
+}
+var llmchat = async function(request, reply) {
+  const rawRequest = RawRequest.safeParse(request.body);
+  if (!rawRequest.success) {
+    return logErr(request, reply, import_http_status_codes.default.BAD_REQUEST, rawRequest.error.message);
+  }
+  const openAIRequest = rawRequest.data;
+  let turnID = 0;
+  try {
+    turnID = Number(this.sql.insertTurn.run(openAIRequest.appID, Buffer.from(JSON.stringify(openAIRequest.messages))).lastInsertRowid);
+  } catch (err) {
+    return logErr(request, reply, import_http_status_codes.default.INTERNAL_SERVER_ERROR, err.message);
+  }
+  try {
+    openAIRequest.messages = retrieveHistory(this.sql, openAIRequest.appID);
+  } catch (err) {
+    return logErr(request, reply, import_http_status_codes.default.INTERNAL_SERVER_ERROR, err.message);
+  }
+  reply.hijack();
+  reply.raw.setHeader("Content-Type", "text/event-stream");
+  const response = await routePrompt(this, request, reply, openAIRequest);
+  if (response === null) {
+    return;
+  }
+  try {
+    const acc = { completion: "", reasoning: "" };
+    await pipeline(
+      // pipeline() will take care of all of the above.
+      Readable.from(yieldSse(response, acc)),
+      reply.raw
+    );
+  } catch (err) {
+    if (err.code !== "ERR_STREAM_PREMATURE_CLOSE" && !reply.raw.writableEnded) {
+      logErr(request, reply, err.code, `Pipeline Error: ${err.message}`);
+      console.error(`Pipeline Error: ${err.message}`);
+      reply.raw.destroy(err);
+    }
+  }
+  return;
+};
+function retrieveHistory(sql, appID) {
+  const turns = sql.selectTurns.all(appID);
+  const history = [];
+  for (const turn of turns) {
+    if (turn.prompt) history.push(...external_exports.array(RawMessage).parse(JSON.parse(turn.prompt)));
+    if (turn.completion) {
+      const content = turn.reasoning ? turn.reasoning + "\n\n" + turn.completion : turn.completion;
+      history.push({ role: "assistant", content });
+    }
+  }
+  return history;
+}
+async function* yieldSse(response, acc) {
+  const reader = readline.createInterface({
+    input: response.body,
+    crlfDelay: Infinity
+  });
+  try {
+    let sseEvent = "Message";
+    for await (const line of reader) {
+      if (line === "") {
+        sseEvent = "Message";
+        continue;
+      }
+      const splitAt = line.indexOf(":");
+      if (splitAt === -1) continue;
+      const tag = line.substring(0, splitAt);
+      let tagline = line.substring(splitAt + 1);
+      if (tagline && tagline[0] === " ") {
+        tagline = tagline.substring(1);
+      }
+      if (tag === "data") {
+        if (tagline === "[DONE]") continue;
+        if (sseEvent === "Message") {
+          try {
+            const openAIResponse = JSON.parse(tagline);
+            const choice = openAIResponse.choices?.[0];
+            const delta = choice?.delta;
+            if (delta?.content) {
+              acc.completion += delta.content;
+            } else if (delta?.reasoning_content) {
+              acc.reasoning += delta.reasoning_content;
+            } else if (delta?.reasoning) {
+              acc.reasoning += delta.reasoning;
+            }
+            yield `data: ${tagline}
+
+`;
+          } catch (err) {
+            yield `event: error
+data: ${JSON.stringify(err.message)}
+
+`;
+          }
+        } else {
+          yield `event: ${sseEvent}
+data: ${tagline}
+
+`;
+        }
+      } else if (tag === "event") {
+        sseEvent = tagline;
+      }
+    }
+  } finally {
+    reader.close();
+  }
+}
+
+// runners.ts
+import * as fs from "fs";
+
+// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/date.js
+var DATE_TIME_RE = /^(\d{4}-\d{2}-\d{2})?[T ]?(?:(\d{2}):\d{2}(?::\d{2}(?:\.\d+)?)?)?(Z|[-+]\d{2}:\d{2})?$/i;
+var TomlDate = class _TomlDate extends Date {
+  #hasDate = false;
+  #hasTime = false;
+  #offset = null;
+  constructor(date5) {
+    let hasDate = true;
+    let hasTime = true;
+    let offset = "Z";
+    if (typeof date5 === "string") {
+      let match = date5.match(DATE_TIME_RE);
+      if (match) {
+        if (!match[1]) {
+          hasDate = false;
+          date5 = `0000-01-01T${date5}`;
+        }
+        hasTime = !!match[2];
+        hasTime && date5[10] === " " && (date5 = date5.replace(" ", "T"));
+        if (match[2] && +match[2] > 23) {
+          date5 = "";
+        } else {
+          offset = match[3] || null;
+          date5 = date5.toUpperCase();
+          if (!offset && hasTime)
+            date5 += "Z";
+        }
+      } else {
+        date5 = "";
+      }
+    }
+    super(date5);
+    if (!isNaN(this.getTime())) {
+      this.#hasDate = hasDate;
+      this.#hasTime = hasTime;
+      this.#offset = offset;
+    }
+  }
+  isDateTime() {
+    return this.#hasDate && this.#hasTime;
+  }
+  isLocal() {
+    return !this.#hasDate || !this.#hasTime || !this.#offset;
+  }
+  isDate() {
+    return this.#hasDate && !this.#hasTime;
+  }
+  isTime() {
+    return this.#hasTime && !this.#hasDate;
+  }
+  isValid() {
+    return this.#hasDate || this.#hasTime;
+  }
+  toISOString() {
+    let iso = super.toISOString();
+    if (this.isDate())
+      return iso.slice(0, 10);
+    if (this.isTime())
+      return iso.slice(11, 23);
+    if (this.#offset === null)
+      return iso.slice(0, -1);
+    if (this.#offset === "Z")
+      return iso;
+    let offset = +this.#offset.slice(1, 3) * 60 + +this.#offset.slice(4, 6);
+    offset = this.#offset[0] === "-" ? offset : -offset;
+    let offsetDate = new Date(this.getTime() - offset * 6e4);
+    return offsetDate.toISOString().slice(0, -1) + this.#offset;
+  }
+  static wrapAsOffsetDateTime(jsDate, offset = "Z") {
+    let date5 = new _TomlDate(jsDate);
+    date5.#offset = offset;
+    return date5;
+  }
+  static wrapAsLocalDateTime(jsDate) {
+    let date5 = new _TomlDate(jsDate);
+    date5.#offset = null;
+    return date5;
+  }
+  static wrapAsLocalDate(jsDate) {
+    let date5 = new _TomlDate(jsDate);
+    date5.#hasTime = false;
+    date5.#offset = null;
+    return date5;
+  }
+  static wrapAsLocalTime(jsDate) {
+    let date5 = new _TomlDate(jsDate);
+    date5.#hasDate = false;
+    date5.#offset = null;
+    return date5;
+  }
+};
+
+// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/error.js
+function getLineColFromPtr(string4, ptr) {
+  let lines = string4.slice(0, ptr).split(/\r\n|\n|\r/g);
+  return [lines.length, lines.pop().length + 1];
+}
+function makeCodeBlock(string4, line, column) {
+  let lines = string4.split(/\r\n|\n|\r/g);
+  let codeblock = "";
+  let numberLen = (Math.log10(line + 1) | 0) + 1;
+  for (let i = line - 1; i <= line + 1; i++) {
+    let l = lines[i - 1];
+    if (!l)
+      continue;
+    codeblock += i.toString().padEnd(numberLen, " ");
+    codeblock += ":  ";
+    codeblock += l;
+    codeblock += "\n";
+    if (i === line) {
+      codeblock += " ".repeat(numberLen + column + 2);
+      codeblock += "^\n";
+    }
+  }
+  return codeblock;
+}
+var TomlError = class extends Error {
+  line;
+  column;
+  codeblock;
+  constructor(message, options) {
+    const [line, column] = getLineColFromPtr(options.toml, options.ptr);
+    const codeblock = makeCodeBlock(options.toml, line, column);
+    super(`Invalid TOML document: ${message}
+
+${codeblock}`, options);
+    this.line = line;
+    this.column = column;
+    this.codeblock = codeblock;
+  }
+};
+
+// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/util.js
+function indexOfNewline(str, start = 0) {
+  let idx = str.indexOf("\n", start);
+  if (str.charCodeAt(idx - 1) === 13)
+    idx--;
+  return idx;
+}
+function skipComment(ctx) {
+  for (; ctx.p < ctx.s.length; ctx.p++) {
+    let c = ctx.s.charCodeAt(ctx.p);
+    if (c === 10)
+      break;
+    if (c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10) {
+      ctx.p++;
+      break;
+    }
+    if (c < 32 && c !== 9 || c === 127) {
+      throw new TomlError("control characters are not allowed in comments", {
+        toml: ctx.s,
+        ptr: ctx.p
+      });
+    }
+  }
+}
+function skipVoid(ctx, banNewLines, banComments) {
+  let c;
+  while (1) {
+    while ((c = ctx.s.charCodeAt(ctx.p)) === 32 || c === 9 || !banNewLines && (c === 10 || c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10))
+      ctx.p++;
+    if (banComments || c !== 35)
+      break;
+    skipComment(ctx);
+  }
+}
+function skipUntil(ctx, sep, end) {
+  let ptr = ctx.p;
+  if (!end) {
+    ptr = indexOfNewline(ctx.s, ptr);
+    ctx.p = ptr < 0 ? ctx.s.length : ptr;
+    return;
+  }
+  for (; ctx.p < ctx.s.length; ctx.p++) {
+    let c = ctx.s.charCodeAt(ctx.p);
+    if (c === 35) {
+      skipComment(ctx);
+    } else if (c === end || c === sep) {
+      return;
+    }
+  }
+  throw new TomlError("cannot find end of structure", {
+    toml: ctx.s,
+    ptr
+  });
+}
+
+// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/primitive.js
+var INT_REGEX = /^((0x[0-9a-fA-F](_?[0-9a-fA-F])*)|(([+-]|0[ob])?\d(_?\d)*))$/;
+var FLOAT_REGEX = /^[+-]?\d(_?\d)*(\.\d(_?\d)*)?([eE][+-]?\d(_?\d)*)?$/;
+var LEADING_ZERO = /^[+-]?0[0-9_]/;
+function parseString(ctx) {
+  let start = ctx.p;
+  let c = ctx.s.charCodeAt(ctx.p++);
+  let first = c;
+  let isLiteral = c === 39;
+  let isMultiline = c === ctx.s.charCodeAt(ctx.p) && c === ctx.s.charCodeAt(ctx.p + 1);
+  if (isMultiline) {
+    if ((c = ctx.s.charCodeAt(ctx.p += 2)) === 10)
+      ctx.p++;
+    else if (c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10)
+      ctx.p += 2;
+  }
+  let parsed = "";
+  let sliceStart = ctx.p;
+  let state = 0;
+  for (; ctx.p < ctx.s.length; ctx.p++) {
+    c = ctx.s.charCodeAt(ctx.p);
+    if (isMultiline && (c === 10 || c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10)) {
+      state = state && 3;
+    } else if (c < 32 && c !== 9 || c === 127) {
+      throw new TomlError("control characters are not allowed in strings", {
+        toml: ctx.s,
+        ptr: ctx.p
+      });
+    } else if ((!state || state === 3) && c === first && (!isMultiline || ctx.s.charCodeAt(ctx.p + 1) === first && ctx.s.charCodeAt(ctx.p + 2) === first)) {
+      if (isMultiline) {
+        if (ctx.s.charCodeAt(ctx.p + 3) === first)
+          ctx.p++;
+        if (ctx.s.charCodeAt(ctx.p + 3) === first)
+          ctx.p++;
+      }
+      if (!state)
+        parsed += ctx.s.slice(sliceStart, ctx.p);
+      ctx.p += isMultiline ? 3 : 1;
+      return parsed;
+    } else if (!state) {
+      if (!isLiteral && c === 92) {
+        parsed += ctx.s.slice(sliceStart, sliceStart = ctx.p);
+        state = 1;
+      }
+    } else if (state === 1) {
+      if (c === 120 || c === 117 || c === 85) {
+        let value = 0;
+        let len = c === 120 ? 2 : c === 117 ? 4 : 8;
+        for (let j = 0; j < len; j++, ctx.p++) {
+          let hex3 = ctx.s.charCodeAt(ctx.p + 1);
+          let digit = (
+            /* 0-9 */
+            hex3 >= 48 && hex3 <= 57 ? hex3 - 48 : (
+              /* A-F */
+              hex3 >= 65 && hex3 <= 70 ? hex3 - 65 + 10 : (
+                /* a-f */
+                hex3 >= 97 && hex3 <= 102 ? hex3 - 97 + 10 : -1
+              )
+            )
+          );
+          if (digit < 0)
+            throw new TomlError("invalid non-hex character in unicode escape", { toml: ctx.s, ptr: ctx.p + 1 });
+          value = value << 4 | digit;
+        }
+        if (value < 0 || value > 1114111 || value >= 55296 && value <= 57343) {
+          throw new TomlError("invalid unicode escape", { toml: ctx.s, ptr: ctx.p });
+        }
+        parsed += String.fromCodePoint(value);
+        sliceStart = ctx.p + 1;
+        state = 0;
+      } else if (c === 32 || c === 9) {
+        state = 2;
+      } else {
+        if (c === 98)
+          parsed += "\b";
+        else if (c === 116)
+          parsed += "	";
+        else if (c === 110)
+          parsed += "\n";
+        else if (c === 102)
+          parsed += "\f";
+        else if (c === 114)
+          parsed += "\r";
+        else if (c === 101)
+          parsed += "\x1B";
+        else if (c === 34)
+          parsed += '"';
+        else if (c === 92)
+          parsed += "\\";
+        else
+          throw new TomlError("unrecognized escape sequence", { toml: ctx.s, ptr: ctx.p });
+        sliceStart = ctx.p + 1;
+        state = 0;
+      }
+    } else if (c !== 32 && c !== 9) {
+      if (state === 2) {
+        throw new TomlError("invalid escape: only line-ending whitespace may be escaped", {
+          toml: ctx.s,
+          ptr: sliceStart
+        });
+      }
+      state = !isLiteral && c === 92 ? 1 : 0;
+      sliceStart = ctx.p;
+    }
+  }
+  throw new TomlError("unfinished string", { toml: ctx.s, ptr: start });
+}
+function sliceAndTrimEndOf(ctx, start, end) {
+  let value = ctx.s.slice(start, end);
+  let commentIdx = value.indexOf("#");
+  if (commentIdx > 0) {
+    skipComment({ s: value, p: commentIdx, d: 0 });
+    value = value.slice(0, commentIdx);
+  }
+  return value.trimEnd();
+}
+function parseValue(ctx, integersAsBigInt, end) {
+  let ptr = ctx.p;
+  let err = { toml: ctx.s, ptr };
+  skipUntil(ctx, 44, end);
+  let value = sliceAndTrimEndOf(ctx, ptr, ctx.p);
+  if (!value)
+    throw new TomlError("incomplete declaration: value expected", err);
+  if (value === "-inf")
+    return -Infinity;
+  if (value === "inf" || value === "+inf")
+    return Infinity;
+  if (value === "nan" || value === "+nan" || value === "-nan")
+    return NaN;
+  if (value === "-0")
+    return integersAsBigInt ? 0n : 0;
+  let isInt = INT_REGEX.test(value);
+  if (isInt || FLOAT_REGEX.test(value)) {
+    if (LEADING_ZERO.test(value)) {
+      throw new TomlError("leading zeroes are not allowed", err);
+    }
+    value = value.replace(/_/g, "");
+    let numeric = +value;
+    if (isNaN(numeric)) {
+      throw new TomlError("invalid number", err);
+    }
+    if (isInt) {
+      if ((isInt = !Number.isSafeInteger(numeric)) && !integersAsBigInt) {
+        throw new TomlError("integer value cannot be represented losslessly", err);
+      }
+      if (isInt || integersAsBigInt === true)
+        numeric = BigInt(value);
+    }
+    return numeric;
+  }
+  const date5 = new TomlDate(value);
+  if (!date5.isValid())
+    throw new TomlError("invalid value", err);
+  return date5;
+}
+
+// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/extract.js
+function extractValue(ctx, end, integersAsBigInt) {
+  let ptr = ctx.p;
+  let c = ctx.s.charCodeAt(ptr);
+  if (c === 91 || c === 123) {
+    if (!ctx.d--) {
+      throw new TomlError("document contains excessively nested structures. aborting.", {
+        toml: ctx.s,
+        ptr
+      });
+    }
+    let value = c === 91 ? parseArray(ctx, integersAsBigInt) : parseInlineTable(ctx, integersAsBigInt);
+    ctx.d++;
+    return value;
+  }
+  if (c === 34 || c === 39) {
+    return parseString(ctx);
+  }
+  if (c === 116) {
+    if (ctx.s.charCodeAt(++ctx.p) !== 114 || ctx.s.charCodeAt(++ctx.p) !== 117 || ctx.s.charCodeAt(++ctx.p) !== 101)
+      throw new TomlError("invalid value", { toml: ctx.s, ptr });
+    ctx.p++;
+    return true;
+  }
+  if (c === 102) {
+    if (ctx.s.charCodeAt(++ctx.p) !== 97 || ctx.s.charCodeAt(++ctx.p) !== 108 || ctx.s.charCodeAt(++ctx.p) !== 115 || ctx.s.charCodeAt(++ctx.p) !== 101)
+      throw new TomlError("invalid value", { toml: ctx.s, ptr });
+    ctx.p++;
+    return false;
+  }
+  return parseValue(ctx, integersAsBigInt, end);
+}
+
+// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/struct.js
+var KEY_PART_RE = /^[a-zA-Z0-9-_]+[ \t]*$/;
+function parseKey(ctx, end = "=") {
+  let start = ctx.p;
+  let dot = start - 1;
+  let parsed = [];
+  let endPtr = ctx.s.indexOf(end, start);
+  if (endPtr < 0) {
+    throw new TomlError("incomplete key-value: cannot find end of key", {
+      toml: ctx.s,
+      ptr: start
+    });
+  }
+  do {
+    let c = ctx.s.charCodeAt(ctx.p = ++dot);
+    if (c !== 32 && c !== 9) {
+      if (c === 34 || c === 39) {
+        if (c === ctx.s.charCodeAt(ctx.p + 1) && c === ctx.s.charCodeAt(ctx.p + 2)) {
+          throw new TomlError("multiline strings are not allowed in keys", {
+            toml: ctx.s,
+            ptr: ctx.p
+          });
+        }
+        let part = parseString(ctx);
+        dot = ctx.s.indexOf(".", ctx.p);
+        let strEnd = ctx.s.slice(ctx.p, dot < 0 || dot > endPtr ? endPtr : dot);
+        let newLine = indexOfNewline(strEnd);
+        if (newLine > -1) {
+          throw new TomlError("newlines are not allowed in keys", {
+            toml: ctx.s,
+            ptr: newLine
+          });
+        }
+        if (strEnd.trimStart()) {
+          throw new TomlError("found extra tokens after the string part", {
+            toml: ctx.s,
+            ptr: ctx.p
+          });
+        }
+        if (endPtr < ctx.p) {
+          endPtr = ctx.s.indexOf(end, ctx.p);
+          if (endPtr < 0) {
+            throw new TomlError("incomplete key-value: cannot find end of key", {
+              toml: ctx.s,
+              ptr: start
+            });
+          }
+        }
+        parsed.push(part);
+      } else {
+        dot = ctx.s.indexOf(".", ctx.p);
+        let part = ctx.s.slice(ctx.p, dot < 0 || dot > endPtr ? endPtr : dot);
+        if (!KEY_PART_RE.test(part)) {
+          throw new TomlError("only letter, numbers, dashes and underscores are allowed in keys", {
+            toml: ctx.s,
+            ptr: ctx.p
+          });
+        }
+        parsed.push(part.trimEnd());
+      }
+    }
+  } while (dot + 1 && dot < endPtr);
+  ctx.p = endPtr + 1;
+  skipVoid(ctx, true, true);
+  return parsed;
+}
+function parseInlineTable(ctx, integersAsBigInt) {
+  let res = {};
+  let seen = /* @__PURE__ */ new Set();
+  let c;
+  ctx.p++;
+  while (ctx.p < ctx.s.length) {
+    skipVoid(ctx);
+    if ((c = ctx.s.charCodeAt(ctx.p)) === 125) {
+      ctx.p++;
+      return res;
+    }
+    let k;
+    let t = res;
+    let hasOwn = false;
+    let p = ctx.p;
+    let key = parseKey(ctx);
+    for (let i = 0; i < key.length; i++) {
+      if (i)
+        t = hasOwn ? t[k] : t[k] = {};
+      k = key[i];
+      if ((hasOwn = Object.hasOwn(t, k)) && (typeof t[k] !== "object" || seen.has(t[k]))) {
+        throw new TomlError("trying to redefine an already defined value", {
+          toml: ctx.s,
+          ptr: p
+        });
+      }
+      if (!hasOwn && k === "__proto__") {
+        Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
+      }
+    }
+    if (hasOwn) {
+      throw new TomlError("trying to redefine an already defined value", {
+        toml: ctx.s,
+        ptr: ctx.p
+      });
+    }
+    let value = extractValue(ctx, 125, integersAsBigInt);
+    seen.add(t[k] = value);
+    skipVoid(ctx);
+    if ((c = ctx.s.charCodeAt(ctx.p++)) === 125) {
+      return res;
+    }
+    if (c !== 44) {
+      throw new TomlError("expected comma or end of structure", { toml: ctx.s, ptr: ctx.p - 1 });
+    }
+  }
+  throw new TomlError("unfinished table encountered", {
+    toml: ctx.s,
+    ptr: ctx.p
+  });
+}
+function parseArray(ctx, integersAsBigInt) {
+  let res = [];
+  let c;
+  ctx.p++;
+  while (ctx.p < ctx.s.length) {
+    skipVoid(ctx);
+    if ((c = ctx.s.charCodeAt(ctx.p)) === 93) {
+      ctx.p++;
+      return res;
+    }
+    res.push(extractValue(ctx, 93, integersAsBigInt));
+    skipVoid(ctx);
+    if ((c = ctx.s.charCodeAt(ctx.p++)) === 93) {
+      return res;
+    }
+    if (c !== 44) {
+      throw new TomlError("expected comma or end of structure", { toml: ctx.s, ptr: ctx.p - 1 });
+    }
+  }
+  throw new TomlError("unfinished array encountered", {
+    toml: ctx.s,
+    ptr: ctx.p
+  });
+}
+
+// node_modules/.pnpm/smol-toml@1.8.0/node_modules/smol-toml/dist/parse.js
+function peekTable(key, table, meta3, type) {
+  let t = table;
+  let m = meta3;
+  let k;
+  let hasOwn = false;
+  let state;
+  for (let i = 0; i < key.length; i++) {
+    if (i) {
+      t = hasOwn ? t[k] : t[k] = {};
+      m = (state = m[k]).c;
+      if (type === 0 && (state.t === 1 || state.t === 2)) {
+        return null;
+      }
+      if (state.t === 2) {
+        let l = t.length - 1;
+        t = t[l];
+        m = m[l].c;
+      }
+    }
+    k = key[i];
+    if ((hasOwn = Object.hasOwn(t, k)) && m[k]?.t === 0 && m[k]?.d) {
+      return null;
+    }
+    if (!hasOwn) {
+      if (k === "__proto__") {
+        Object.defineProperty(t, k, { enumerable: true, configurable: true, writable: true });
+        Object.defineProperty(m, k, { enumerable: true, configurable: true, writable: true });
+      }
+      m[k] = {
+        t: i < key.length - 1 && type === 2 ? 3 : type,
+        d: false,
+        i: 0,
+        c: {}
+      };
+    }
+  }
+  state = m[k];
+  if (state.t !== type && !(type === 1 && state.t === 3)) {
+    return null;
+  }
+  if (type === 2) {
+    if (!state.d) {
+      state.d = true;
+      t[k] = [];
+    }
+    t[k].push(t = {});
+    state.c[state.i++] = state = { t: 1, d: false, i: 0, c: {} };
+  }
+  if (state.d) {
+    return null;
+  }
+  state.d = true;
+  if (type === 1) {
+    t = hasOwn ? t[k] : t[k] = {};
+  } else if (type === 0 && hasOwn) {
+    return null;
+  }
+  return [k, t, state.c];
+}
+function parse3(toml, { maxDepth = 1e3, integersAsBigInt } = {}) {
+  let ctx = { s: toml, p: 0, d: maxDepth };
+  let res = {};
+  let meta3 = {};
+  let tmp;
+  let tbl = res;
+  let m = meta3;
+  skipVoid(ctx);
+  while (ctx.p < toml.length) {
+    if (toml.charCodeAt(ctx.p) === 91) {
+      let isTableArray = toml.charCodeAt(++ctx.p) === 91;
+      tmp = ctx.p += +isTableArray;
+      let k = parseKey(ctx, "]");
+      if (isTableArray) {
+        if (toml.charCodeAt(ctx.p - 1) !== 93) {
+          throw new TomlError("expected end of table declaration", {
+            toml,
+            ptr: ctx.p - 1
+          });
+        }
+        ctx.p++;
+      }
+      let p = peekTable(
+        k,
+        res,
+        meta3,
+        isTableArray ? 2 : 1
+        /* Type.EXPLICIT */
+      );
+      if (!p) {
+        throw new TomlError("trying to redefine an already defined table or value", {
+          toml,
+          ptr: tmp
+        });
+      }
+      m = p[2];
+      tbl = p[1];
+    } else {
+      tmp = ctx.p;
+      let k = parseKey(ctx);
+      let p = peekTable(
+        k,
+        tbl,
+        m,
+        0
+        /* Type.DOTTED */
+      );
+      if (!p) {
+        throw new TomlError("trying to redefine an already defined table or value", {
+          toml,
+          ptr: tmp
+        });
+      }
+      p[1][p[0]] = extractValue(ctx, void 0, integersAsBigInt);
+    }
+    skipVoid(ctx, true);
+    if (ctx.p < toml.length && (tmp = toml.charCodeAt(ctx.p)) !== 10 && tmp !== 13) {
+      throw new TomlError("each key-value declaration must be followed by an end-of-line", {
+        toml,
+        ptr: ctx.p
+      });
+    }
+    skipVoid(ctx);
+  }
+  return res;
+}
+
 // runners.ts
 var RUNNERS_CONFIG = "/home/ubuntu/agentic/runners.toml";
 var RawRunnerAPI = external_exports.object({
@@ -84351,7 +84478,7 @@ var LlmRunners = class {
     } catch (err) {
       throw new Error(`Config file not found ${RUNNERS_CONFIG}`);
     }
-    const rawRunners = RawRunners.parse(parse(toml_str));
+    const rawRunners = RawRunners.parse(parse3(toml_str));
     const apis = /* @__PURE__ */ new Map();
     for (const [runner, api] of Object.entries(rawRunners.apis)) {
       const key = process.env[api.key];
@@ -84395,7 +84522,64 @@ var LlmRunners = class {
 };
 
 // main.ts
+import Database from "better-sqlite3";
+var HARNESS_DB_PATH = "/home/ubuntu/agentic/harnessd/harnessd.db";
+function initDB() {
+  const rwdb = new Database(HARNESS_DB_PATH, {
+    fileMustExist: true
+    // SQLite errors out instead of creating a db if it doesn't exist.
+  });
+  const waldb = new Database(HARNESS_DB_PATH, {
+    // dedicated db connection just for the background worker
+    fileMustExist: true
+    // SQLite errors out instead of creating a db if it doesn't exist.
+  });
+  rwdb.exec(`
+        PRAGMA busy_timeout = 5000; -- 5 secs
+        PRAGMA cache_size = -32000; -- 32 MB
+        PRAGMA mmap_size = 0;
+        PRAGMA synchronous = NORMAL;
+        PRAGMA journal_size_limit = 104857600; -- 100 MB
+        PRAGMA temp_store = MEMORY;
+        PRAGMA wal_autocheckpoint = 0;
+    `);
+  waldb.exec(`
+        PRAGMA busy_timeout = 5000; -- 5 secs
+        PRAGMA synchronous = NORMAL;
+        PRAGMA journal_size_limit = 104857600; -- 100 MB
+        PRAGMA wal_autocheckpoint = 0;
+    `);
+  waloop(waldb);
+  const sqlStatements = {
+    insertTurn: rwdb.prepare(
+      `INSERT INTO turns (appID, prompt) VALUES (?, ?)`
+    ),
+    updateTurn: rwdb.prepare(
+      `UPDATE turns SET completion = NULLIF(?, ''), reasoning = CASE WHEN ? = '' THEN reasoning ELSE COALESCE(reasoning || ' ', '') || ? END WHERE turnID = ?`
+    ),
+    selectTurns: rwdb.prepare(
+      `SELECT turnID, CAST(prompt AS TEXT) AS prompt, reasoning, completion FROM turns WHERE appID = ? ORDER BY turnID ASC`
+    )
+  };
+  return { rwdb, waldb, sqlStatements };
+}
+function waloop(waldb) {
+  setInterval(() => {
+    try {
+      waldb.pragma("optimize=0x10002");
+      waldb.pragma("wal_checkpoint(PASSIVE)");
+      const freePages = waldb.pragma("freelist_count", { simple: true });
+      if (freePages > 25600) {
+        waldb.pragma("incremental_vacuum(256)");
+      }
+    } catch (error61) {
+      console.error("SQLite checkpointing or optimization failed:", error61);
+    }
+  }, 6e4).unref();
+}
 try {
+  const { rwdb, waldb, sqlStatements } = initDB();
+  onShutdown(rwdb, waldb);
   const client = new import_undici2.Agent({
     connect: { timeout: 5e3 },
     // dead destination
@@ -84420,7 +84604,7 @@ try {
     // accept proxy-reported client IP (X-Forwarded-For)
     logger: { level: "error" }
     // log only if server crashes
-  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).post("/llmprompt", llmprompt);
+  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmchat", llmchat).post("/", top);
   app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {
     if (err) {
       console.error(err);
@@ -84445,6 +84629,30 @@ function logRequest() {
     done();
   });
   return this;
+}
+var isShuttingDown = false;
+function onShutdown(rwdb, waldb) {
+  const signalHandler = (signal, exitCode = 0) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    const cleanupTimeout = setTimeout(() => {
+      console.error(`Shutting down ungracefully!`);
+      process.exit(1);
+    }, 3e3);
+    cleanupTimeout.unref();
+    try {
+      rwdb.close();
+      waldb.close();
+    } catch (dbErr) {
+      console.error(`Error closing dbs: ${dbErr}`);
+    } finally {
+      clearTimeout(cleanupTimeout);
+      process.exit(exitCode);
+    }
+  };
+  process.on("SIGINT", signalHandler);
+  process.on("SIGTERM", signalHandler);
+  return;
 }
 /*! Bundled license information:
 

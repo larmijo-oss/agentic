@@ -315,3 +315,5 @@ lint/
 *.nar
 *.ear
 hs_err_pid*
+harnessd.key
+*.key
