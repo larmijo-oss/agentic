@@ -8,9 +8,10 @@
 import SwiftUI
 
 private let harness = "https://3.129.88.202"
-private let api = "/llmprompt"
+private let api = "/llmchat"
 private let model = "gemma4:e4b"
 private let showThinking = true
+private let appID = Bundle.main.bundleIdentifier
 
 private let Json = JSONDecoder()
 struct Rein {
@@ -173,6 +174,7 @@ struct Rein {
             let openAIRequest = OpenAIRequest(
                 model: model,
                 messages: messages,
+                appID: appID
             )
             let request = Result { try prepareRequest(harnessApi, openAIRequest) }
             guard case .success(let request) = request else {
@@ -226,6 +228,7 @@ struct OpenAIRequest: Encodable {
     //let max_tokens = 8192 // some models require it
     let messages: [Message]
     let stream = true       // always streaming
+    let appID: String?
 }
 
 struct OpenAIResponse: Decodable {
