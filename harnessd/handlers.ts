@@ -174,7 +174,12 @@ export const llmchat: Http2RouteHandler = async function (request, reply) {
             reply.raw,
         )
         // after the stream ends, save the accumulated completion
-
+        this.sql.updateTurn.run(
+        acc.completion,
+        acc.reasoning,
+        acc.reasoning,
+        turnID
+)
     } catch (err: any) {
         // If the client disconnects early, pipeline automatically throws an AbortError
         // and correctly destroys the underlying fetch body and readline interface.
