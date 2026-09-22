@@ -150,7 +150,7 @@ const { rwdb, waldb, sqlStatements } = initDB()
         // Routes follow
         .post("/llmprompt", handlers.llmprompt)
 	.post("/llmchat", handlers.llmchat)
-        .post("/", handlers.top)
+       
 
 	app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {
         if (err) {
