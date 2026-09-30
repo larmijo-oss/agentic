@@ -7,91 +7,124 @@
 
 import SwiftUI
 
-struct SubmitButton: View {
+struct ContentView: View {
+    @FocusState private var messageInFocus: Bool
+
     @Environment(AppViewModel.self) private var vm
-    
-    @State private var isSending = false
 
     var body: some View {
-        Button {
-            isSending = true
+        @Bindable var vm = vm
 
-            let chat = Chat(content: vm.message)
-            vm.conversation.append(chat)
-            
-            // pass chat to harness in an array of `messages`
-            // but Swift encoder cannot serialize @Observable hidden
-            // variable correctly (_content in this case) so must
-            // manually convert the hidden Chat._content to Message.content
-            let messages = [Message(role: chat.role, content: chat.content)]
-            
-            // prepare completion placeholder
-            let completion = Chat(role: "assistant",
-                                content: "", timestamp: "") // placeholder for assistant's streaming completion
-            vm.conversation.append(completion)
-            
-            Task (priority: .background){
-                await vm.rein.llmPrompt(messages, completion: completion, errMsg: Bindable(vm).errMsg)
-                // cleanup
-                                vm.message = ""
-                                isSending = false
-                                vm.showError = !vm.errMsg.isEmpty
+        VStack(spacing: 12) {
+
+            Picker(
+                "Game",
+                selection: Binding(
+                    get: {
+                        vm.selectedGame
+                    },
+                    set: { newGame in
+                        Task {
+                            await vm.switchGame(to: newGame)
+                        }
+                    }
+                )
+            ) {
+                ForEach(Game.allCases) { game in
+                    Text(game.rawValue)
+                        .tag(game)
+                }
             }
-        } label: {
-            if isSending {
+            .pickerStyle(.segmented)
+            .disabled(vm.isStreaming)
+            .padding(.horizontal)
+
+            ConversationView()
+
+            VStack(spacing: 8) {
+
+                TextField(
+                    vm.systemInstruction,
+                    text: $vm.systemPrompt
+                )
+                .textFieldStyle(.roundedBorder)
+                .disabled(vm.isStreaming)
+
+                HStack(alignment: .bottom) {
+
+                    TextField(
+                        vm.userInstruction,
+                        text: $vm.userPrompt
+                    )
+                    .focused($messageInFocus)
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(vm.isStreaming)
+
+                    Button {
+                        Task {
+                            await vm.send()
+                        }
+                    } label: {
+                        if vm.isStreaming {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .secondary))
+                                .progressViewStyle(
+                                    CircularProgressViewStyle(
+                                        tint: .secondary
+                                    )
+                                )
                                 .padding(10)
+
                         } else {
                             Image(systemName: "paperplane.fill")
-                                .foregroundColor(vm.message.isEmpty ? .gray : .yellow)
+                                .foregroundColor(
+                                    vm.sendDisabled
+                                    ? .gray
+                                    : .yellow
+                                )
                                 .padding(10)
                         }
-        }
-        .disabled(isSending || vm.message.isEmpty)
-                .background(Color(isSending || vm.message.isEmpty ? .secondarySystemBackground : .systemBlue))
-                .clipShape(Circle())
-                .padding(.trailing)
-    }
-}
+                    }
+                    .disabled(vm.sendDisabled)
+                    .background(
+                        Color(
+                            vm.sendDisabled
+                            ? .secondarySystemBackground
+                            : .systemBlue
+                        )
+                    )
+                    .clipShape(Circle())
+                }
 
-
-struct ContentView: View {
-    @FocusState private var messageInFocus: Bool // tap background to dismiss kbd
-    @Environment(AppViewModel.self) private var vm
-
-    var body: some View {
-        VStack {
-            ConversationView()
-            
-            HStack (alignment: .bottom) {
-                            TextField(vm.instruction, text: Bindable(vm).message)
-                                .focused($messageInFocus) // to dismiss keyboard
-                                .textFieldStyle(.roundedBorder)
-                                .cornerRadius(20)
-                                .shadow(radius: 2)
-                                .background(Color(.clear))
-                                .border(Color(.clear))
-
-                            SubmitButton()
-                        }
-                        .padding(EdgeInsets(top: 0, leading: 20, bottom: 8, trailing: 0))
-                      
+                Button("Clear") {
+                    Task {
+                        await vm.clear()
+                    }
+                }
+                .disabled(vm.isStreaming)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
         }
         .contentShape(.rect)
-                .onTapGesture {
-                    messageInFocus.toggle()
-                }
-              
-        .navigationTitle("llmPrompt")
+        .onTapGesture {
+            messageInFocus = false
+        }
+        .navigationTitle("Geography Games")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("LLM Error", isPresented: Bindable(vm).showError) {
-                        Button("OK") {
-                            vm.errMsg = ""
-                        }
-                    } message: {
-                        Text(vm.errMsg)
-                    }
-
+        .task {
+            if !vm.hasStartedGame {
+                await vm.startGame()
+            }
+        }
+        .alert(
+            "LLM Error",
+            isPresented: $vm.showError
+        ) {
+            Button("OK") {
+                vm.errMsg = ""
+            }
+        } message: {
+            Text(vm.errMsg)
+        }
     }
 }

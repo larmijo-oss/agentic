@@ -8,7 +8,8 @@
 import SwiftUI
 
 private let harness = "https://3.129.88.202"
-private let api = "/llmchat"
+private let chatApi = "/llmchat"
+private let clearApi = "/llmclear"
 private let model = "gemma4:e4b"
 private let showThinking = true
 private let appID = Bundle.main.bundleIdentifier
@@ -165,8 +166,8 @@ struct Rein {
     
     func llmPrompt(_ messages: [Message], completion: Chat, errMsg: Binding<String>) async {
             
-            guard let harnessApi = URL(string: "\(harness)\(api)") else {
-                errMsg.wrappedValue = "Bad harness URL \(harness)\(api)"
+            guard let harnessApi = URL(string: "\(harness)\(chatApi)") else {
+                errMsg.wrappedValue = "Bad harness URL \(harness)\(chatApi)"
                 return
             }
 
@@ -210,6 +211,52 @@ struct Rein {
                 completion.content.append("\n\n**\(errMsg.wrappedValue)**\n\n")
             }
         }
+    
+    func llmClear(errMsg: Binding<String>) async -> Bool {
+        guard let harnessApi = URL(string: "\(harness)\(clearApi)") else {
+            errMsg.wrappedValue = "Bad harness URL \(harness)\(clearApi)"
+            return false
+        }
+
+        let openAIRequest = OpenAIRequest(
+            model: model,
+            messages: [],
+            appID: appID
+        )
+
+        let requestResult = Result {
+            try prepareRequest(harnessApi, openAIRequest)
+        }
+
+        guard case .success(let request) = requestResult else {
+            if case .failure(let error) = requestResult {
+                errMsg.wrappedValue = "Prepare clear request failed \(error)"
+            }
+
+            return false
+        }
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            if let http = response as? HTTPURLResponse,
+               http.statusCode != 200 {
+                errMsg.wrappedValue =
+                    "Clear failed: \(http.statusCode) " +
+                    HTTPURLResponse.localizedString(
+                        forStatusCode: http.statusCode
+                    )
+
+                return false
+            }
+
+            return true
+
+        } catch {
+            errMsg.wrappedValue = "Connect to harness failed \(error)"
+            return false
+        }
+    }
 
 }
 
