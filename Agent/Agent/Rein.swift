@@ -185,14 +185,6 @@ struct Rein {
                 return
             }
 
-            // post request
-            //let bytes = await Result { try await postPrompt(request) }
-            //guard case .success(let bytes) = bytes else {
-              //  if case .failure(let error) = bytes {
-                //    errMsg.wrappedValue = "Connect to harness failed \(error)"
-                //}
-                //return
-            //}
         
         let bytes: URLSession.AsyncBytes
 

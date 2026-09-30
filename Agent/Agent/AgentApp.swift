@@ -229,6 +229,8 @@ final class AppViewModel {
             systemPrompt = ""
             userPrompt = ""
             hasStartedGame = false
+
+            await startGame()
         }
 
         showError = !errMsg.isEmpty
