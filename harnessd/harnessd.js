@@ -83606,11 +83606,6 @@ var RawRequest = external_exports.object({
   messages: external_exports.array(RawMessage),
   stream: external_exports.boolean()
 });
-async function top(request, reply) {
-  return reply.code(200).send({
-    message: "UM EECS agentic harnessd"
-  });
-}
 var logOk = (request, runner, model) => {
   console.info(`runner: ${runner}:${model}`);
 };
@@ -83711,6 +83706,12 @@ var llmchat = async function(request, reply) {
       Readable.from(yieldSse(response, acc)),
       reply.raw
     );
+    this.sql.updateTurn.run(
+      acc.completion,
+      acc.reasoning,
+      acc.reasoning,
+      turnID
+    );
   } catch (err) {
     if (err.code !== "ERR_STREAM_PREMATURE_CLOSE" && !reply.raw.writableEnded) {
       logErr(request, reply, err.code, `Pipeline Error: ${err.message}`);
@@ -83719,6 +83720,29 @@ var llmchat = async function(request, reply) {
     }
   }
   return;
+};
+var llmclear = async function(request, reply) {
+  const rawRequest = RawRequest.safeParse(request.body);
+  if (!rawRequest.success) {
+    return logErr(
+      request,
+      reply,
+      import_http_status_codes.default.BAD_REQUEST,
+      rawRequest.error.message
+    );
+  }
+  const openAIRequest = rawRequest.data;
+  try {
+    this.sql.deleteTurns.run(openAIRequest.appID);
+  } catch (err) {
+    return logErr(
+      request,
+      reply,
+      import_http_status_codes.default.INTERNAL_SERVER_ERROR,
+      err.message
+    );
+  }
+  return reply.status(import_http_status_codes.default.OK).send();
 };
 function retrieveHistory(sql, appID) {
   const turns = sql.selectTurns.all(appID);
@@ -84559,6 +84583,9 @@ function initDB() {
     ),
     selectTurns: rwdb.prepare(
       `SELECT turnID, CAST(prompt AS TEXT) AS prompt, reasoning, completion FROM turns WHERE appID = ? ORDER BY turnID ASC`
+    ),
+    deleteTurns: rwdb.prepare(
+      `DELETE FROM turns WHERE appID = ?`
     )
   };
   return { rwdb, waldb, sqlStatements };
@@ -84604,7 +84631,7 @@ try {
     // accept proxy-reported client IP (X-Forwarded-For)
     logger: { level: "error" }
     // log only if server crashes
-  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmchat", llmchat).post("/", top);
+  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmchat", llmchat).post("/llmclear", llmclear);
   app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {
     if (err) {
       console.error(err);

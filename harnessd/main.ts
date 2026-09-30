@@ -84,6 +84,9 @@ function initDB() {
         selectTurns: rwdb.prepare(
             `SELECT turnID, CAST(prompt AS TEXT) AS prompt, reasoning, completion FROM turns WHERE appID = ? ORDER BY turnID ASC`
         ),
+	deleteTurns: rwdb.prepare( 
+	     `DELETE FROM turns WHERE appID = ?`
+	),
     }
 
     return { rwdb, waldb, sqlStatements }
@@ -150,6 +153,7 @@ const { rwdb, waldb, sqlStatements } = initDB()
         // Routes follow
         .post("/llmprompt", handlers.llmprompt)
 	.post("/llmchat", handlers.llmchat)
+	.post("/llmclear", handlers.llmclear)
        
 
 	app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {
