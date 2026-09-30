@@ -194,6 +194,35 @@ export const llmchat: Http2RouteHandler = async function (request, reply) {
     }
     return
 }
+
+export const llmclear: Http2RouteHandler = async function (request, reply) {
+    const rawRequest = RawRequest.safeParse(request.body)
+
+    if (!rawRequest.success) {
+        return logErr(
+            request,
+            reply,
+            HttpStatus.BAD_REQUEST,
+            rawRequest.error.message
+        )
+    }
+
+    const openAIRequest = rawRequest.data as OpenAIRequest
+
+    try {
+        this.sql.deleteTurns.run(openAIRequest.appID)
+    } catch (err: any) {
+        return logErr(
+            request,
+            reply,
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            err.message
+        )
+    }
+
+    return reply.status(HttpStatus.OK).send()
+}
+
 type Turn = { turnID: number; prompt: string; reasoning: string | null; completion: string | null }
 
 function retrieveHistory(sql: FastifyHttp2Instance['sql'], appID: string): Message[] {
