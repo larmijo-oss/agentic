@@ -10,7 +10,7 @@ import { LlmRunners } from './runners.js'
 import { llmprompt, top } from "./handlers.js";
 import Database from 'better-sqlite3' 
 import type BetterSqlite3 from 'better-sqlite3'
-
+import { Toolbox } from './toolbox.js'
 
 
 declare module 'fastify' {
@@ -18,6 +18,7 @@ declare module 'fastify' {
         client: Dispatcher        
         logRequest: () => this        
         runners: LlmRunners
+	 toolbox: Toolbox
 	sql: ReturnType<typeof initDB>['sqlStatements']
     }
     interface FastifyRequest {
@@ -61,6 +62,7 @@ function initDB() {
         PRAGMA journal_size_limit = 104857600; -- 100 MB
         PRAGMA temp_store = MEMORY;
         PRAGMA wal_autocheckpoint = 0;
+	PRAGMA foreign_keys = ON;
     `)
 
     // a dedicated maintenance connection
@@ -84,6 +86,29 @@ function initDB() {
         selectTurns: rwdb.prepare(
             `SELECT turnID, CAST(prompt AS TEXT) AS prompt, reasoning, completion FROM turns WHERE appID = ? ORDER BY turnID ASC`
         ),
+	selectTools: rwdb.prepare(`SELECT schemas FROM tools WHERE appID = ?`),
+        upsertTools: rwdb.prepare(
+            `INSERT INTO tools (appID, schemas)
+            VALUES (?, ?)
+            ON CONFLICT (appID) DO UPDATE SET
+                schemas = excluded.schemas,
+                timestamp = unixepoch()`
+        ),
+        insertCall: rwdb.prepare(
+            `INSERT INTO calls (turnID, id, idx, name, arguments) VALUES (?, ?, ?, ?, ?)`
+        ),
+        selectCalls: rwdb.prepare(
+            `SELECT turnID, id, name, arguments, result FROM calls
+             WHERE turnID IN (SELECT turnID FROM turns WHERE appID = ?)
+             ORDER BY turnID ASC, idx ASC`
+        ),
+        updateCall: rwdb.prepare(
+            `UPDATE calls SET result = ? WHERE id = ?`
+        ),
+        updateReasoning: rwdb.prepare(
+            `UPDATE turns SET reasoning = COALESCE(reasoning || ' ', '') || ? WHERE turnID = ?`
+        ),
+
     }
 
     return { rwdb, waldb, sqlStatements }
@@ -146,10 +171,13 @@ const { rwdb, waldb, sqlStatements } = initDB()
         // add global states
         .decorate('client', client)
         .decorate('runners', new LlmRunners())
+        .decorate('toolbox', new Toolbox())
         .decorate('sql', sqlStatements)
         // Routes follow
         .post("/llmprompt", handlers.llmprompt)
 	.post("/llmchat", handlers.llmchat)
+	.post('/llmtools/', handlers.llmtools) 
+	.post('/weather/', handlers.weather)
        
 
 	app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {

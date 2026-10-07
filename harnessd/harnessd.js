@@ -2471,18 +2471,18 @@ var require_hooks = __commonJS({
       }
     }
     function hookRunnerGenerator(iterator) {
-      return function hookRunner(functions, request, reply, cb) {
+      return function hookRunner(functions, request2, reply, cb) {
         let i = 0;
         function next(err) {
           if (err || i === functions.length) {
-            cb(err, request, reply);
+            cb(err, request2, reply);
             return;
           }
           let result;
           try {
-            result = iterator(functions[i++], request, reply, next);
+            result = iterator(functions[i++], request2, reply, next);
           } catch (error61) {
-            cb(error61, request, reply);
+            cb(error61, request2, reply);
             return;
           }
           if (result && typeof result.then === "function") {
@@ -2496,38 +2496,38 @@ var require_hooks = __commonJS({
           if (!err) {
             err = new FST_ERR_SEND_UNDEFINED_ERR();
           }
-          cb(err, request, reply);
+          cb(err, request2, reply);
         }
         next();
       };
     }
-    function onResponseHookIterator(fn, request, reply, next) {
-      return fn(request, reply, next);
+    function onResponseHookIterator(fn, request2, reply, next) {
+      return fn(request2, reply, next);
     }
     var onResponseHookRunner = hookRunnerGenerator(onResponseHookIterator);
     var preValidationHookRunner = hookRunnerGenerator(hookIterator);
     var preHandlerHookRunner = hookRunnerGenerator(hookIterator);
     var onTimeoutHookRunner = hookRunnerGenerator(hookIterator);
     var onRequestHookRunner = hookRunnerGenerator(hookIterator);
-    function onSendHookRunner(functions, request, reply, payload, cb) {
+    function onSendHookRunner(functions, request2, reply, payload, cb) {
       let i = 0;
       function next(err, newPayload) {
         if (err) {
-          cb(err, request, reply, payload);
+          cb(err, request2, reply, payload);
           return;
         }
         if (newPayload !== void 0) {
           payload = newPayload;
         }
         if (i === functions.length) {
-          cb(null, request, reply, payload);
+          cb(null, request2, reply, payload);
           return;
         }
         let result;
         try {
-          result = functions[i++](request, reply, payload, next);
+          result = functions[i++](request2, reply, payload, next);
         } catch (error61) {
-          cb(error61, request, reply);
+          cb(error61, request2, reply);
           return;
         }
         if (result && typeof result.then === "function") {
@@ -2538,36 +2538,36 @@ var require_hooks = __commonJS({
         try {
           next(null, newPayload);
         } catch (err) {
-          cb(err, request, reply, payload);
+          cb(err, request2, reply, payload);
         }
       }
       function handleReject(err) {
         if (!err) {
           err = new FST_ERR_SEND_UNDEFINED_ERR();
         }
-        cb(err, request, reply, payload);
+        cb(err, request2, reply, payload);
       }
       next();
     }
     var preSerializationHookRunner = onSendHookRunner;
-    function preParsingHookRunner(functions, request, reply, cb) {
+    function preParsingHookRunner(functions, request2, reply, cb) {
       let i = 0;
       function next(err, newPayload) {
         if (reply.sent) {
           return;
         }
         if (newPayload !== void 0) {
-          request[kRequestPayloadStream] = newPayload;
+          request2[kRequestPayloadStream] = newPayload;
         }
         if (err || i === functions.length) {
-          cb(err, request, reply);
+          cb(err, request2, reply);
           return;
         }
         let result;
         try {
-          result = functions[i++](request, reply, request[kRequestPayloadStream], next);
+          result = functions[i++](request2, reply, request2[kRequestPayloadStream], next);
         } catch (error61) {
-          cb(error61, request, reply);
+          cb(error61, request2, reply);
           return;
         }
         if (result && typeof result.then === "function") {
@@ -2581,22 +2581,22 @@ var require_hooks = __commonJS({
         if (!err) {
           err = new FST_ERR_SEND_UNDEFINED_ERR();
         }
-        cb(err, request, reply);
+        cb(err, request2, reply);
       }
       next();
     }
-    function onRequestAbortHookRunner(functions, request, cb) {
+    function onRequestAbortHookRunner(functions, request2, cb) {
       let i = 0;
       function next(err) {
         if (err || i === functions.length) {
-          cb(err, request);
+          cb(err, request2);
           return;
         }
         let result;
         try {
-          result = functions[i++](request, next);
+          result = functions[i++](request2, next);
         } catch (error61) {
-          cb(error61, request);
+          cb(error61, request2);
           return;
         }
         if (result && typeof result.then === "function") {
@@ -2610,13 +2610,13 @@ var require_hooks = __commonJS({
         if (!err) {
           err = new FST_ERR_SEND_UNDEFINED_ERR();
         }
-        cb(err, request);
+        cb(err, request2);
       }
       next();
     }
-    function hookIterator(fn, request, reply, next) {
+    function hookIterator(fn, request2, reply, next) {
       if (reply.sent === true) return void 0;
-      return fn(request, reply, next);
+      return fn(request2, reply, next);
     }
     module.exports = {
       Hooks,
@@ -3319,14 +3319,14 @@ var require_validation = __commonJS({
         FSTWRN001("params", method, url2);
       }
     }
-    function validateParam(validatorFunction, request, paramName) {
-      const isUndefined = request[paramName] === void 0;
+    function validateParam(validatorFunction, request2, paramName) {
+      const isUndefined = request2[paramName] === void 0;
       let ret;
       try {
-        const data = isUndefined ? null : request[paramName];
+        const data = isUndefined ? null : request2[paramName];
         if (validatorFunction?.schemaEnv) {
           ret = validatorFunction(data, {
-            parentData: request,
+            parentData: request2,
             parentDataProperty: paramName
           });
         } else {
@@ -3347,22 +3347,22 @@ var require_validation = __commonJS({
       function answer(ret2) {
         if (ret2 === false) return validatorFunction.errors;
         if (ret2 && ret2.error) return ret2.error;
-        if (ret2 && typeof ret2 === "object" && "value" in ret2) request[paramName] = ret2.value;
+        if (ret2 && typeof ret2 === "object" && "value" in ret2) request2[paramName] = ret2.value;
         return false;
       }
     }
-    function validate2(context, request, execution) {
+    function validate2(context, request2, execution) {
       const runExecution = execution === void 0;
       if (runExecution && context[paramsSchema] === void 0 && context[bodySchema] === void 0 && context[querystringSchema] === void 0 && context[headersSchema] === void 0) {
         return false;
       }
       if (runExecution || !execution.skipParams) {
-        const params = validateParam(context[paramsSchema], request, "params");
+        const params = validateParam(context[paramsSchema], request2, "params");
         if (params) {
           if (typeof params.then !== "function") {
             return wrapValidationError(params, "params", context.schemaErrorFormatter);
           } else {
-            return validateAsyncParams(params, context, request);
+            return validateAsyncParams(params, context, request2);
           }
         }
       }
@@ -3371,65 +3371,65 @@ var require_validation = __commonJS({
         if (typeof context[bodySchema] === "function") {
           validatorFunction = context[bodySchema];
         } else if (context[bodySchema]) {
-          const contentSchema = context[bodySchema][request.mediaType];
+          const contentSchema = context[bodySchema][request2.mediaType];
           if (contentSchema) {
             validatorFunction = contentSchema;
           }
         }
-        const body = validateParam(validatorFunction, request, "body");
+        const body = validateParam(validatorFunction, request2, "body");
         if (body) {
           if (typeof body.then !== "function") {
             return wrapValidationError(body, "body", context.schemaErrorFormatter);
           } else {
-            return validateAsyncBody(body, context, request);
+            return validateAsyncBody(body, context, request2);
           }
         }
       }
       if (runExecution || !execution.skipQuery) {
-        const query = validateParam(context[querystringSchema], request, "query");
+        const query = validateParam(context[querystringSchema], request2, "query");
         if (query) {
           if (typeof query.then !== "function") {
             return wrapValidationError(query, "querystring", context.schemaErrorFormatter);
           } else {
-            return validateAsyncQuery(query, context, request);
+            return validateAsyncQuery(query, context, request2);
           }
         }
       }
-      const headers = validateParam(context[headersSchema], request, "headers");
+      const headers = validateParam(context[headersSchema], request2, "headers");
       if (headers) {
         if (typeof headers.then !== "function") {
           return wrapValidationError(headers, "headers", context.schemaErrorFormatter);
         } else {
-          return validateAsyncHeaders(headers, context, request);
+          return validateAsyncHeaders(headers, context, request2);
         }
       }
       return false;
     }
-    function validateAsyncParams(validatePromise, context, request) {
+    function validateAsyncParams(validatePromise, context, request2) {
       return validatePromise.then((paramsResult) => {
         if (paramsResult) {
           return wrapValidationError(paramsResult, "params", context.schemaErrorFormatter);
         }
-        return validate2(context, request, { skipParams: true });
+        return validate2(context, request2, { skipParams: true });
       });
     }
-    function validateAsyncBody(validatePromise, context, request) {
+    function validateAsyncBody(validatePromise, context, request2) {
       return validatePromise.then((bodyResult) => {
         if (bodyResult) {
           return wrapValidationError(bodyResult, "body", context.schemaErrorFormatter);
         }
-        return validate2(context, request, { skipParams: true, skipBody: true });
+        return validate2(context, request2, { skipParams: true, skipBody: true });
       });
     }
-    function validateAsyncQuery(validatePromise, context, request) {
+    function validateAsyncQuery(validatePromise, context, request2) {
       return validatePromise.then((queryResult) => {
         if (queryResult) {
           return wrapValidationError(queryResult, "querystring", context.schemaErrorFormatter);
         }
-        return validate2(context, request, { skipParams: true, skipBody: true, skipQuery: true });
+        return validate2(context, request2, { skipParams: true, skipBody: true, skipQuery: true });
       });
     }
-    function validateAsyncHeaders(validatePromise, context, request) {
+    function validateAsyncHeaders(validatePromise, context, request2) {
       return validatePromise.then((headersResult) => {
         if (headersResult) {
           return wrapValidationError(headersResult, "headers", context.schemaErrorFormatter);
@@ -4275,20 +4275,20 @@ var require_handle_request = __commonJS({
     } = require_symbols2();
     var ContentType = require_content_type();
     var channels = diagnostics.tracingChannel("fastify.request.handler");
-    function handleRequest(err, request, reply) {
+    function handleRequest(err, request2, reply) {
       if (reply.sent === true) return;
       if (err != null) {
         reply[kReplyIsError] = true;
         reply.send(err);
         return;
       }
-      const method = request.method;
+      const method = request2.method;
       if (this[kSupportedHTTPMethods].bodyless.has(method)) {
-        handler(request, reply);
+        handler(request2, reply);
         return;
       }
       if (this[kSupportedHTTPMethods].bodywith.has(method)) {
-        const headers = request.headers;
+        const headers = request2.headers;
         const ctHeader = headers["content-type"];
         if (method === "QUERY") {
           if (ctHeader === void 0) {
@@ -4304,39 +4304,39 @@ var require_handle_request = __commonJS({
         }
         if (ctHeader === void 0) {
           if (isEmptyBody(headers)) {
-            handler(request, reply);
+            handler(request2, reply);
             return;
           }
-          request[kRouteContext].contentTypeParser.run("", handler, request, reply);
+          request2[kRouteContext].contentTypeParser.run("", handler, request2, reply);
           return;
         }
-        if (!request[kRequestContentType]) {
-          request[kRequestContentType] = ContentType.from(ctHeader);
+        if (!request2[kRequestContentType]) {
+          request2[kRequestContentType] = ContentType.from(ctHeader);
         }
-        if (request[kRequestContentType].isValid === false) {
+        if (request2[kRequestContentType].isValid === false) {
           reply[kReplyIsError] = true;
           reply.status(415).send(new FST_ERR_CTP_INVALID_MEDIA_TYPE());
           return;
         }
-        request[kRouteContext].contentTypeParser.run(request[kRequestContentType].toString(), handler, request, reply);
+        request2[kRouteContext].contentTypeParser.run(request2[kRequestContentType].toString(), handler, request2, reply);
         return;
       }
-      handler(request, reply);
+      handler(request2, reply);
     }
-    function handler(request, reply) {
+    function handler(request2, reply) {
       try {
-        if (request[kRouteContext].preValidation !== null) {
+        if (request2[kRouteContext].preValidation !== null) {
           preValidationHookRunner(
-            request[kRouteContext].preValidation,
-            request,
+            request2[kRouteContext].preValidation,
+            request2,
             reply,
             preValidationCallback
           );
         } else {
-          preValidationCallback(null, request, reply);
+          preValidationCallback(null, request2, reply);
         }
       } catch (err) {
-        preValidationCallback(err, request, reply);
+        preValidationCallback(err, request2, reply);
       }
     }
     function isEmptyBody(headers) {
@@ -4344,23 +4344,23 @@ var require_handle_request = __commonJS({
       const transferEncoding = headers["transfer-encoding"];
       return transferEncoding === void 0 && (contentLength === void 0 || contentLength === "0");
     }
-    function preValidationCallback(err, request, reply) {
+    function preValidationCallback(err, request2, reply) {
       if (reply.sent === true) return;
       if (err != null) {
         reply[kReplyIsError] = true;
         reply.send(err);
         return;
       }
-      const validationErr = validateSchema(reply[kRouteContext], request);
+      const validationErr = validateSchema(reply[kRouteContext], request2);
       const isAsync = validationErr && typeof validationErr.then === "function" || false;
       if (isAsync) {
-        const cb = validationCompleted.bind(null, request, reply);
+        const cb = validationCompleted.bind(null, request2, reply);
         validationErr.then(cb, cb);
       } else {
-        validationCompleted(request, reply, validationErr);
+        validationCompleted(request2, reply, validationErr);
       }
     }
-    function validationCompleted(request, reply, validationErr) {
+    function validationCompleted(request2, reply, validationErr) {
       if (validationErr) {
         if (reply[kRouteContext].attachValidation === false) {
           reply.send(validationErr);
@@ -4368,25 +4368,25 @@ var require_handle_request = __commonJS({
         }
         reply.request.validationError = validationErr;
       }
-      if (request[kRouteContext].preHandler !== null) {
+      if (request2[kRouteContext].preHandler !== null) {
         preHandlerHookRunner(
-          request[kRouteContext].preHandler,
-          request,
+          request2[kRouteContext].preHandler,
+          request2,
           reply,
           preHandlerCallback
         );
       } else {
-        preHandlerCallback(null, request, reply);
+        preHandlerCallback(null, request2, reply);
       }
     }
-    function preHandlerCallback(err, request, reply) {
+    function preHandlerCallback(err, request2, reply) {
       if (reply.sent) return;
-      const context = request[kRouteContext];
+      const context = request2[kRouteContext];
       if (!channels.hasSubscribers || context[kFourOhFourContext] === null) {
-        preHandlerCallbackInner(err, request, reply);
+        preHandlerCallbackInner(err, request2, reply);
       } else {
         const store = {
-          request,
+          request: request2,
           reply,
           async: false,
           route: {
@@ -4395,11 +4395,11 @@ var require_handle_request = __commonJS({
           }
         };
         reply[kDiagnosticsStore] = store;
-        channels.start.runStores(store, preHandlerCallbackInner, void 0, err, request, reply, store);
+        channels.start.runStores(store, preHandlerCallbackInner, void 0, err, request2, reply, store);
       }
     }
-    function preHandlerCallbackInner(err, request, reply, store) {
-      const context = request[kRouteContext];
+    function preHandlerCallbackInner(err, request2, reply, store) {
+      const context = request2[kRouteContext];
       try {
         if (err != null) {
           reply[kReplyIsError] = true;
@@ -4413,7 +4413,7 @@ var require_handle_request = __commonJS({
         }
         let result;
         try {
-          result = context.handler(request, reply);
+          result = context.handler(request2, reply);
         } catch (err2) {
           if (store) {
             store.error = err2;
@@ -5861,11 +5861,11 @@ var require_log_controller = __commonJS({
        * @param {object} reply        Fastify reply object.
        * @param {object} [metadata]   Extra contextual data (unused).
        */
-      incomingRequest(request, reply, metadata) {
-        if (this.isLogDisabled(request)) {
+      incomingRequest(request2, reply, metadata) {
+        if (this.isLogDisabled(request2)) {
           return;
         }
-        request.log.info({ req: request }, "incoming request");
+        request2.log.info({ req: request2 }, "incoming request");
       }
       /**
        * Logs the outcome of a completed request.
@@ -5876,8 +5876,8 @@ var require_log_controller = __commonJS({
        * @param {object} reply        Fastify reply object.
        * @param {object} [metadata]   Extra contextual data (unused).
        */
-      requestCompleted(error61, request, reply, metadata) {
-        if (this.isLogDisabled(request)) {
+      requestCompleted(error61, request2, reply, metadata) {
+        if (this.isLogDisabled(request2)) {
           return;
         }
         if (error61) {
@@ -5895,12 +5895,12 @@ var require_log_controller = __commonJS({
        * @param {object} reply        Fastify reply object (must have `statusCode`).
        * @param {object} [metadata]   Extra contextual data (unused).
        */
-      defaultErrorLog(error61, request, reply, metadata) {
-        if (this.isLogDisabled(request)) {
+      defaultErrorLog(error61, request2, reply, metadata) {
+        if (this.isLogDisabled(request2)) {
           return;
         }
         if (reply.statusCode >= 500) {
-          reply.log.error({ req: request, res: reply, err: error61 }, error61?.message);
+          reply.log.error({ req: request2, res: reply, err: error61 }, error61?.message);
         } else {
           reply.log.info({ res: reply, err: error61 }, error61?.message);
         }
@@ -5914,8 +5914,8 @@ var require_log_controller = __commonJS({
        * @param {object} reply        Fastify reply object.
        * @param {object} [metadata]   Extra contextual data (unused).
        */
-      streamError(error61, request, reply, metadata) {
-        if (this.isLogDisabled(request)) {
+      streamError(error61, request2, reply, metadata) {
+        if (this.isLogDisabled(request2)) {
           return;
         }
         if (error61.code === "ERR_STREAM_PREMATURE_CLOSE") {
@@ -5932,12 +5932,12 @@ var require_log_controller = __commonJS({
        * @param {object} reply        Fastify reply object.
        * @param {object} [metadata]   Extra contextual data (unused).
        */
-      routeNotFound(request, reply, metadata) {
-        if (this.isLogDisabled(request)) {
+      routeNotFound(request2, reply, metadata) {
+        if (this.isLogDisabled(request2)) {
           return;
         }
-        const { url: url2, method } = request.raw;
-        request.log.info(`Route ${method}:${url2} not found`);
+        const { url: url2, method } = request2.raw;
+        request2.log.info(`Route ${method}:${url2} not found`);
       }
       /**
        * Logs a warning when writeHead fails during error handling.
@@ -5947,12 +5947,12 @@ var require_log_controller = __commonJS({
        * @param {object} reply        Fastify reply object.
        * @param {object} [metadata]   Extra contextual data (unused).
        */
-      writeHeadError(error61, request, reply, metadata) {
-        if (this.isLogDisabled(request)) {
+      writeHeadError(error61, request2, reply, metadata) {
+        if (this.isLogDisabled(request2)) {
           return;
         }
         reply.log.warn(
-          { req: request, res: reply, err: error61 },
+          { req: request2, res: reply, err: error61 },
           error61?.message
         );
       }
@@ -5965,8 +5965,8 @@ var require_log_controller = __commonJS({
        * @param {object} metadata     Extra contextual data.
        * @param {number} metadata.statusCode The status code that triggered the serializer.
        */
-      serializerError(error61, request, reply, metadata) {
-        if (this.isLogDisabled(request)) {
+      serializerError(error61, request2, reply, metadata) {
+        if (this.isLogDisabled(request2)) {
           return;
         }
         reply.log.error({ err: error61, statusCode: metadata.statusCode }, "The serializer for the given status code failed");
@@ -11108,10 +11108,10 @@ var require_error_handler = __commonJS({
         reply.send(err);
       }
     }
-    function defaultErrorHandler(error61, request, reply) {
+    function defaultErrorHandler(error61, request2, reply) {
       setErrorHeaders(error61, reply);
       setErrorStatusCode(reply, error61);
-      request.server[kLogController].defaultErrorLog(error61, request, reply);
+      request2.server[kLogController].defaultErrorLog(error61, request2, reply);
       reply.send(error61);
     }
     function fallbackErrorHandler(error61, reply, cb) {
@@ -11379,13 +11379,13 @@ var require_reply = __commonJS({
     var ContentType = require_content_type();
     var toString = Object.prototype.toString;
     var HTTP2_WRITE_CHUNK_SIZE = 64 * 1024;
-    function Reply(res, request, log) {
+    function Reply(res, request2, log) {
       this.raw = res;
       this[kReplySerializer] = null;
       this[kReplyErrorHandlerCalled] = false;
       this[kReplyIsError] = false;
       this[kReplyIsRunningOnErrorHook] = false;
-      this.request = request;
+      this.request = request2;
       this[kReplyHeaders] = {};
       this[kReplyTrailers] = null;
       this[kReplyHasStatusCode] = false;
@@ -11629,8 +11629,8 @@ var require_reply = __commonJS({
       return serialize2;
     };
     Reply.prototype.compileSerializationSchema = function(schema, httpStatus = null, contentType = null) {
-      const { request } = this;
-      const { method, url: url2 } = request;
+      const { request: request2 } = this;
+      const { method, url: url2 } = request2;
       if (this[kRouteContext][kReplyCacheSerializeFns]?.has(schema)) {
         return this[kRouteContext][kReplyCacheSerializeFns].get(schema);
       }
@@ -11779,7 +11779,7 @@ var require_reply = __commonJS({
         onSendEnd(reply, payload);
       }
     }
-    function wrapOnSendEnd(err, request, reply, payload) {
+    function wrapOnSendEnd(err, request2, reply, payload) {
       if (err != null) {
         onErrorHook(reply, err);
       } else {
@@ -12108,18 +12108,18 @@ var require_reply = __commonJS({
       reply.raw.on("finish", onResFinished);
       reply.raw.on("error", onResFinished);
     }
-    function onResponseCallback(err, request, reply) {
-      reply.server[kLogController].requestCompleted(err, request, reply);
+    function onResponseCallback(err, request2, reply) {
+      reply.server[kLogController].requestCompleted(err, request2, reply);
     }
     function buildReply(R) {
       const props = R.props.slice();
-      function _Reply(res, request, log) {
+      function _Reply(res, request2, log) {
         this.raw = res;
         this[kReplyIsError] = false;
         this[kReplyErrorHandlerCalled] = false;
         this[kReplyHijacked] = false;
         this[kReplySerializer] = null;
-        this.request = request;
+        this.request = request2;
         this[kReplyHeaders] = {};
         this[kReplyTrailers] = null;
         this[kReplyStartTime] = void 0;
@@ -13319,8 +13319,8 @@ var require_request = __commonJS({
       });
       return _Request;
     }
-    function assertsRequestDecoration(request, name) {
-      if (!decorators.hasKey(request, name) && !decorators.exist(request, name)) {
+    function assertsRequestDecoration(request2, name) {
+      if (!decorators.hasKey(request2, name) && !decorators.exist(request2, name)) {
         throw new FST_ERR_DEC_UNDECLARED(name, "request");
       }
     }
@@ -13876,22 +13876,22 @@ var require_content_type_parser = __commonJS({
       }
       return removed || idx > -1;
     };
-    ContentTypeParser.prototype.run = function(contentType, handler, request, reply) {
+    ContentTypeParser.prototype.run = function(contentType, handler, request2, reply) {
       const parser = this.getParser(contentType);
       if (parser === void 0) {
-        if (request.is404 === true) {
-          handler(request, reply);
+        if (request2.is404 === true) {
+          handler(request2, reply);
           return;
         }
         reply[kReplyIsError] = true;
         reply.send(new FST_ERR_CTP_INVALID_MEDIA_TYPE());
         return;
       }
-      const resource = new AsyncResource("content-type-parser:run", request);
+      const resource = new AsyncResource("content-type-parser:run", request2);
       const done = resource.bind(onDone);
       if (parser.asString === true || parser.asBuffer === true) {
         rawBody(
-          request,
+          request2,
           reply,
           reply[kRouteContext]._parserOptions,
           parser,
@@ -13899,7 +13899,7 @@ var require_content_type_parser = __commonJS({
         );
         return;
       }
-      const result = parser.fn(request, request[kRequestPayloadStream], done);
+      const result = parser.fn(request2, request2[kRequestPayloadStream], done);
       if (result && typeof result.then === "function") {
         result.then((body) => {
           done(null, body);
@@ -13913,21 +13913,21 @@ var require_content_type_parser = __commonJS({
           reply.send(error61);
           return;
         }
-        request.body = body;
-        handler(request, reply);
+        request2.body = body;
+        handler(request2, reply);
       }
     };
-    function rawBody(request, reply, options, parser, done) {
+    function rawBody(request2, reply, options, parser, done) {
       const asString = parser.asString === true;
       const limit = options.limit === null ? parser.bodyLimit : options.limit;
-      const contentLength = Number(request.headers["content-length"]);
+      const contentLength = Number(request2.headers["content-length"]);
       if (contentLength > limit) {
         done(new FST_ERR_CTP_BODY_TOO_LARGE(), void 0);
         return;
       }
       let receivedLength = 0;
       let body = asString ? "" : [];
-      const payload = request[kRequestPayloadStream] || request.raw;
+      const payload = request2[kRequestPayloadStream] || request2.raw;
       if (asString) {
         payload.setEncoding("utf8");
       }
@@ -13969,7 +13969,7 @@ var require_content_type_parser = __commonJS({
         if (!asString) {
           body = Buffer.concat(body);
         }
-        const result = parser.fn(request, body, done);
+        const result = parser.fn(request2, body, done);
         if (result && typeof result.then === "function") {
           result.then((body2) => {
             done(null, body2);
@@ -33739,14 +33739,14 @@ var require_route = __commonJS({
           req.headers["accept-version"] = req.headers[kRequestAcceptVersion];
           req.headers[kRequestAcceptVersion] = void 0;
         }
-        const request = new context.Request(id, params, req, query, childLogger, context);
-        const reply = new context.Reply(res, request, childLogger);
-        context.server[kLogController].incomingRequest(request, reply);
+        const request2 = new context.Request(id, params, req, query, childLogger, context);
+        const reply = new context.Reply(res, request2, childLogger);
+        context.server[kLogController].incomingRequest(request2, reply);
         const handlerTimeout = context.handlerTimeout;
         if (handlerTimeout > 0) {
           const ac = new AbortController();
-          request[kRequestSignal] = ac;
-          request[kTimeoutTimer] = setTimeout(() => {
+          request2[kRequestSignal] = ac;
+          request2[kTimeoutTimer] = setTimeout(() => {
             if (!reply.sent) {
               const err = new FST_ERR_HANDLER_TIMEOUT(handlerTimeout, context.config?.url);
               ac.abort(err);
@@ -33758,36 +33758,36 @@ var require_route = __commonJS({
             if (!ac.signal.aborted) {
               ac.abort();
             }
-            clearTimeout(request[kTimeoutTimer]);
+            clearTimeout(request2[kTimeoutTimer]);
           };
           req.on("close", onAbort);
-          request[kOnAbort] = onAbort;
+          request2[kOnAbort] = onAbort;
         }
         if (hasLogger === true || context.onResponse !== null || handlerTimeout > 0) {
           setupResponseListeners(reply);
         }
         if (context.onTimeout !== null) {
-          if (!request.raw.socket._meta) {
-            request.raw.socket.on("timeout", handleTimeout);
+          if (!request2.raw.socket._meta) {
+            request2.raw.socket.on("timeout", handleTimeout);
           }
-          request.raw.socket._meta = { context, request, reply, onTimeout: handleTimeout };
+          request2.raw.socket._meta = { context, request: request2, reply, onTimeout: handleTimeout };
         }
         if (context.onRequest !== null) {
           onRequestHookRunner(
             context.onRequest,
-            request,
+            request2,
             reply,
             runPreParsing
           );
         } else {
-          runPreParsing(null, request, reply);
+          runPreParsing(null, request2, reply);
         }
         if (context.onRequestAbort !== null) {
           req.on("close", () => {
             if (req.aborted) {
               onRequestAbortHookRunner(
                 context.onRequestAbort,
-                request,
+                request2,
                 handleOnRequestAbortHooksErrors.bind(null, reply)
               );
             }
@@ -33801,10 +33801,10 @@ var require_route = __commonJS({
       }
     }
     function handleTimeout() {
-      const { context, request, reply } = this._meta;
+      const { context, request: request2, reply } = this._meta;
       onTimeoutHookRunner(
         context.onTimeout,
-        request,
+        request2,
         reply,
         noop
       );
@@ -33843,18 +33843,18 @@ var require_route = __commonJS({
         throw new FST_ERR_ROUTE_LOG_LEVEL_INVALID(method, path, logLevel);
       }
     }
-    function runPreParsing(err, request, reply) {
+    function runPreParsing(err, request2, reply) {
       if (reply.sent === true) return;
       if (err != null) {
         reply[kReplyIsError] = true;
         reply.send(err);
         return;
       }
-      request[kRequestPayloadStream] = request.raw;
-      if (request[kRouteContext].preParsing !== null) {
-        preParsingHookRunner(request[kRouteContext].preParsing, request, reply, handleRequest.bind(request.server));
+      request2[kRequestPayloadStream] = request2.raw;
+      if (request2[kRouteContext].preParsing !== null) {
+        preParsingHookRunner(request2[kRouteContext].preParsing, request2, reply, handleRequest.bind(request2.server));
       } else {
-        handleRequest.call(request.server, null, request, reply);
+        handleRequest.call(request2.server, null, request2, reply);
       }
     }
     function buildRouterOptions(options, defaultOptions) {
@@ -33916,9 +33916,9 @@ var require_four_oh_four = __commonJS({
         instance[kCanSetNotFoundHandler] = true;
         router.defaultRoute = router.defaultRoute.bind(instance);
       }
-      function basic404(request, reply) {
-        request.server[kLogController].routeNotFound(request, reply);
-        const { url: url2, method } = request.raw;
+      function basic404(request2, reply) {
+        request2.server[kLogController].routeNotFound(request2, reply);
+        const { url: url2, method } = request2.raw;
         reply.code(404).send({
           message: `Route ${method}:${url2} not found`,
           error: "Not Found",
@@ -34001,11 +34001,11 @@ var require_four_oh_four = __commonJS({
         const fourOhFourContext = this[kFourOhFourLevelInstance][kFourOhFourContext];
         const id = getGenReqId(fourOhFourContext.server, req);
         const childLogger = createChildLogger(fourOhFourContext, logger, req, id);
-        const request = new Request(id, null, req, null, childLogger, fourOhFourContext);
-        const reply = new Reply(res, request, childLogger);
-        fourOhFourContext.server[kLogController].incomingRequest(request, reply);
-        request.log.warn("the default handler for 404 did not catch this, this is likely a fastify bug, please report it");
-        request.log.warn(router.prettyPrint());
+        const request2 = new Request(id, null, req, null, childLogger, fourOhFourContext);
+        const reply = new Reply(res, request2, childLogger);
+        fourOhFourContext.server[kLogController].incomingRequest(request2, reply);
+        request2.log.warn("the default handler for 404 did not catch this, this is likely a fastify bug, please report it");
+        request2.log.warn(router.prettyPrint());
         reply.code(404).send(new FST_ERR_NOT_FOUND());
       }
     }
@@ -36589,10 +36589,10 @@ var require_fastify = __commonJS({
         if (options.frameworkErrors) {
           const id = getGenReqId(routeEventContext.server, req);
           const childLogger = createChildLogger(routeEventContext, options.logger, req, id);
-          const request = new Request(id, null, req, null, childLogger, routeEventContext);
-          const reply = new Reply(res, request, childLogger);
-          routeEventContext.server[kLogController].incomingRequest(request, reply);
-          return options.frameworkErrors(new FST_ERR_BAD_URL(path), request, reply);
+          const request2 = new Request(id, null, req, null, childLogger, routeEventContext);
+          const reply = new Reply(res, request2, childLogger);
+          routeEventContext.server[kLogController].incomingRequest(request2, reply);
+          return options.frameworkErrors(new FST_ERR_BAD_URL(path), request2, reply);
         }
         const body = JSON.stringify({
           error: "Bad Request",
@@ -36610,10 +36610,10 @@ var require_fastify = __commonJS({
         if (options.frameworkErrors) {
           const id = getGenReqId(routeEventContext.server, req);
           const childLogger = createChildLogger(routeEventContext, options.logger, req, id);
-          const request = new Request(id, null, req, null, childLogger, routeEventContext);
-          const reply = new Reply(res, request, childLogger);
-          routeEventContext.server[kLogController].incomingRequest(request, reply);
-          return options.frameworkErrors(new FST_ERR_MAX_PARAM_LENGTH(path), request, reply);
+          const request2 = new Request(id, null, req, null, childLogger, routeEventContext);
+          const reply = new Reply(res, request2, childLogger);
+          routeEventContext.server[kLogController].incomingRequest(request2, reply);
+          return options.frameworkErrors(new FST_ERR_MAX_PARAM_LENGTH(path), request2, reply);
         }
         const body = JSON.stringify({
           error: "Bad Request",
@@ -36634,10 +36634,10 @@ var require_fastify = __commonJS({
             if (options.frameworkErrors) {
               const id = getGenReqId(routeEventContext.server, req);
               const childLogger = createChildLogger(routeEventContext, options.logger, req, id);
-              const request = new Request(id, null, req, null, childLogger, routeEventContext);
-              const reply = new Reply(res, request, childLogger);
-              routeEventContext.server[kLogController].incomingRequest(request, reply);
-              return options.frameworkErrors(new FST_ERR_ASYNC_CONSTRAINT(), request, reply);
+              const request2 = new Request(id, null, req, null, childLogger, routeEventContext);
+              const reply = new Reply(res, request2, childLogger);
+              routeEventContext.server[kLogController].incomingRequest(request2, reply);
+              return options.frameworkErrors(new FST_ERR_ASYNC_CONSTRAINT(), request2, reply);
             }
             const body = '{"error":"Internal Server Error","message":"Unexpected error from async constraint","statusCode":500}';
             res.writeHead(500, {
@@ -38582,10 +38582,10 @@ var require_util3 = __commonJS({
       }
       return obj;
     }
-    function errorRequest(client, request, err) {
+    function errorRequest(client, request2, err) {
       try {
-        request.onResponseError(err);
-        assert2(request.aborted);
+        request2.onResponseError(err);
+        assert2(request2.aborted);
       } catch (err2) {
         client.emit("error", err2);
       }
@@ -39335,7 +39335,7 @@ var require_request3 = __commonJS({
         return this;
       }
     };
-    function processHeader(request, key, val) {
+    function processHeader(request2, key, val) {
       if (val && (typeof val === "object" && !Array.isArray(val))) {
         throw new InvalidArgumentError(`invalid ${key} header`);
       } else if (val === void 0) {
@@ -39382,24 +39382,24 @@ var require_request3 = __commonJS({
         }
       }
       if (headerName === "host") {
-        if (request.host !== null) {
+        if (request2.host !== null) {
           throw new InvalidArgumentError("duplicate host header");
         }
         if (typeof val !== "string") {
           throw new InvalidArgumentError("invalid host header");
         }
-        request.host = val;
+        request2.host = val;
       } else if (headerName === "content-length") {
-        if (request.contentLength !== null) {
+        if (request2.contentLength !== null) {
           throw new InvalidArgumentError("duplicate content-length header");
         }
         if (!isValidContentLengthHeaderValue(val)) {
           throw new InvalidArgumentError("invalid content-length header");
         }
-        request.contentLength = parseInt(val, 10);
-      } else if (request.contentType === null && headerName === "content-type") {
-        request.contentType = val;
-        request.headers.push(key, val);
+        request2.contentLength = parseInt(val, 10);
+      } else if (request2.contentType === null && headerName === "content-type") {
+        request2.contentType = val;
+        request2.headers.push(key, val);
       } else if (headerName === "transfer-encoding" || headerName === "keep-alive" || headerName === "upgrade") {
         throw new InvalidArgumentError(`invalid ${headerName} header`);
       } else if (headerName === "connection") {
@@ -39413,13 +39413,13 @@ var require_request3 = __commonJS({
             throw new InvalidArgumentError("invalid connection header");
           }
           if (trimmed === "close") {
-            request.reset = true;
+            request2.reset = true;
           }
         }
       } else if (headerName === "expect") {
         throw new NotSupportedError("expect header not supported");
       } else {
-        request.headers.push(key, val);
+        request2.headers.push(key, val);
       }
     }
     module.exports = Request;
@@ -41784,11 +41784,11 @@ var require_util4 = __commonJS({
     function normalizeBinaryStringToUtf8(value) {
       return Buffer.from(value, "binary").toString("utf8");
     }
-    function requestCurrentURL(request) {
-      return request.urlList[request.urlList.length - 1];
+    function requestCurrentURL(request2) {
+      return request2.urlList[request2.urlList.length - 1];
     }
-    function requestBadPort(request) {
-      const url2 = requestCurrentURL(request);
+    function requestBadPort(request2) {
+      const url2 = requestCurrentURL(request2);
       if (urlIsHttpHttpsScheme(url2) && badPortsSet.has(url2.port)) {
         return "blocked";
       }
@@ -41826,10 +41826,10 @@ var require_util4 = __commonJS({
       }
       return policy;
     }
-    function setRequestReferrerPolicyOnRedirect(request, actualResponse) {
+    function setRequestReferrerPolicyOnRedirect(request2, actualResponse) {
       const policy = parseReferrerPolicy(actualResponse);
       if (policy !== "") {
-        request.referrerPolicy = policy;
+        request2.referrerPolicy = policy;
       }
     }
     function crossOriginResourcePolicyCheck() {
@@ -41849,33 +41849,33 @@ var require_util4 = __commonJS({
       header = httpRequest.mode;
       httpRequest.headersList.set("sec-fetch-mode", header, true);
     }
-    function appendRequestOriginHeader(request) {
-      let serializedOrigin = request.origin;
+    function appendRequestOriginHeader(request2) {
+      let serializedOrigin = request2.origin;
       if (serializedOrigin === "client" || serializedOrigin === void 0) {
         return;
       }
-      if (request.responseTainting === "cors" || request.mode === "websocket") {
-        request.headersList.append("origin", serializedOrigin, true);
-      } else if (request.method !== "GET" && request.method !== "HEAD") {
-        switch (request.referrerPolicy) {
+      if (request2.responseTainting === "cors" || request2.mode === "websocket") {
+        request2.headersList.append("origin", serializedOrigin, true);
+      } else if (request2.method !== "GET" && request2.method !== "HEAD") {
+        switch (request2.referrerPolicy) {
           case "no-referrer":
             serializedOrigin = null;
             break;
           case "no-referrer-when-downgrade":
           case "strict-origin":
           case "strict-origin-when-cross-origin":
-            if (request.origin && urlHasHttpsScheme(request.origin) && !urlHasHttpsScheme(requestCurrentURL(request))) {
+            if (request2.origin && urlHasHttpsScheme(request2.origin) && !urlHasHttpsScheme(requestCurrentURL(request2))) {
               serializedOrigin = null;
             }
             break;
           case "same-origin":
-            if (!sameOrigin(request, requestCurrentURL(request))) {
+            if (!sameOrigin(request2, requestCurrentURL(request2))) {
               serializedOrigin = null;
             }
             break;
           default:
         }
-        request.headersList.append("origin", serializedOrigin, true);
+        request2.headersList.append("origin", serializedOrigin, true);
       }
     }
     function coarsenTime(timestamp, crossOriginIsolatedCapability) {
@@ -41929,18 +41929,18 @@ var require_util4 = __commonJS({
         referrerPolicy: policyContainer.referrerPolicy
       };
     }
-    function determineRequestsReferrer(request) {
-      const policy = request.referrerPolicy;
+    function determineRequestsReferrer(request2) {
+      const policy = request2.referrerPolicy;
       assert2(policy);
       let referrerSource = null;
-      if (request.referrer === "client") {
+      if (request2.referrer === "client") {
         const globalOrigin = getGlobalOrigin();
         if (!globalOrigin || globalOrigin.origin === "null") {
           return "no-referrer";
         }
         referrerSource = new URL(globalOrigin);
-      } else if (webidl.is.URL(request.referrer)) {
-        referrerSource = request.referrer;
+      } else if (webidl.is.URL(request2.referrer)) {
+        referrerSource = request2.referrer;
       }
       let referrerURL = stripURLForReferrer(referrerSource);
       const referrerOrigin = stripURLForReferrer(referrerSource, true);
@@ -41958,14 +41958,14 @@ var require_util4 = __commonJS({
         case "unsafe-url":
           return referrerURL;
         case "strict-origin": {
-          const currentURL = requestCurrentURL(request);
+          const currentURL = requestCurrentURL(request2);
           if (isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(currentURL)) {
             return "no-referrer";
           }
           return referrerOrigin;
         }
         case "strict-origin-when-cross-origin": {
-          const currentURL = requestCurrentURL(request);
+          const currentURL = requestCurrentURL(request2);
           if (sameOrigin(referrerURL, currentURL)) {
             return referrerURL;
           }
@@ -41975,17 +41975,17 @@ var require_util4 = __commonJS({
           return referrerOrigin;
         }
         case "same-origin":
-          if (sameOrigin(request, referrerURL)) {
+          if (sameOrigin(request2, referrerURL)) {
             return referrerURL;
           }
           return "no-referrer";
         case "origin-when-cross-origin":
-          if (sameOrigin(request, referrerURL)) {
+          if (sameOrigin(request2, referrerURL)) {
             return referrerURL;
           }
           return referrerOrigin;
         case "no-referrer-when-downgrade": {
-          const currentURL = requestCurrentURL(request);
+          const currentURL = requestCurrentURL(request2);
           if (isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(currentURL)) {
             return "no-referrer";
           }
@@ -42052,7 +42052,7 @@ var require_util4 = __commonJS({
       if (url2.protocol === "blob:") return true;
       return isOriginPotentiallyTrustworthy(url2.origin);
     }
-    function tryUpgradeRequestToAPotentiallyTrustworthyURL(request) {
+    function tryUpgradeRequestToAPotentiallyTrustworthyURL(request2) {
     }
     function sameOrigin(A, B) {
       if (A.origin === B.origin && A.origin === "null") {
@@ -42431,7 +42431,7 @@ var require_util4 = __commonJS({
       }
       return gettingDecodingSplitting(value);
     }
-    function hasAuthenticationEntry(request) {
+    function hasAuthenticationEntry(request2) {
       return false;
     }
     function includesCredentials(url2) {
@@ -43766,11 +43766,11 @@ var require_client_h1 = __commonJS({
           util.destroy(socket, new SocketError("bad response", util.getSocketInfo(socket)));
           return -1;
         }
-        const request = client[kQueue][client[kRunningIdx]];
-        if (!request) {
+        const request2 = client[kQueue][client[kRunningIdx]];
+        if (!request2) {
           return -1;
         }
-        request.onResponseStarted();
+        request2.onResponseStarted();
         return 0;
       }
       /**
@@ -43837,9 +43837,9 @@ var require_client_h1 = __commonJS({
         assert2(!socket.destroyed);
         assert2(!this.paused);
         assert2((headers.length & 1) === 0);
-        const request = client[kQueue][client[kRunningIdx]];
-        assert2(request);
-        assert2(request.upgrade || request.method === "CONNECT");
+        const request2 = client[kQueue][client[kRunningIdx]];
+        assert2(request2);
+        assert2(request2.upgrade || request2.method === "CONNECT");
         this.statusCode = 0;
         this.statusText = "";
         this.shouldKeepAlive = false;
@@ -43856,7 +43856,7 @@ var require_client_h1 = __commonJS({
         client[kQueue][client[kRunningIdx]++] = null;
         client.emit("disconnect", client[kUrl], [client], new InformationalError("upgrade"));
         try {
-          request.onRequestUpgrade(statusCode, headers, socket);
+          request2.onRequestUpgrade(statusCode, headers, socket);
         } catch (err) {
           util.destroy(socket, err);
         }
@@ -43877,8 +43877,8 @@ var require_client_h1 = __commonJS({
           util.destroy(socket, new SocketError("bad response", util.getSocketInfo(socket)));
           return -1;
         }
-        const request = client[kQueue][client[kRunningIdx]];
-        if (!request) {
+        const request2 = client[kQueue][client[kRunningIdx]];
+        if (!request2) {
           return -1;
         }
         assert2(!this.upgrade);
@@ -43887,23 +43887,23 @@ var require_client_h1 = __commonJS({
           util.destroy(socket, new SocketError("bad response", util.getSocketInfo(socket)));
           return -1;
         }
-        if (upgrade && !request.upgrade) {
+        if (upgrade && !request2.upgrade) {
           util.destroy(socket, new SocketError("bad upgrade", util.getSocketInfo(socket)));
           return -1;
         }
         assert2(this.timeoutType === TIMEOUT_HEADERS);
         this.statusCode = statusCode;
         this.shouldKeepAlive = shouldKeepAlive || // Override llhttp value which does not allow keepAlive for HEAD.
-        request.method === "HEAD" && !socket[kReset] && this.connectionKeepAlive;
+        request2.method === "HEAD" && !socket[kReset] && this.connectionKeepAlive;
         if (this.statusCode >= 200) {
-          const bodyTimeout = request.bodyTimeout != null ? request.bodyTimeout : client[kBodyTimeout];
+          const bodyTimeout = request2.bodyTimeout != null ? request2.bodyTimeout : client[kBodyTimeout];
           this.setTimeout(bodyTimeout, TIMEOUT_BODY);
         } else if (this.timeout) {
           if (this.timeout.refresh) {
             this.timeout.refresh();
           }
         }
-        if (request.method === "CONNECT") {
+        if (request2.method === "CONNECT") {
           assert2(client[kRunning] === 1);
           this.upgrade = true;
           return 2;
@@ -43934,11 +43934,11 @@ var require_client_h1 = __commonJS({
         } else {
           socket[kReset] = true;
         }
-        const pause = request.onResponseStart(statusCode, headers, this.resume, statusText) === false;
-        if (request.aborted) {
+        const pause = request2.onResponseStart(statusCode, headers, this.resume, statusText) === false;
+        if (request2.aborted) {
           return -1;
         }
-        if (request.method === "HEAD") {
+        if (request2.method === "HEAD") {
           return 1;
         }
         if (statusCode < 200) {
@@ -43959,8 +43959,8 @@ var require_client_h1 = __commonJS({
         if (socket.destroyed) {
           return -1;
         }
-        const request = client[kQueue][client[kRunningIdx]];
-        assert2(request);
+        const request2 = client[kQueue][client[kRunningIdx]];
+        assert2(request2);
         assert2(this.timeoutType === TIMEOUT_BODY);
         if (this.timeout) {
           if (this.timeout.refresh) {
@@ -43973,7 +43973,7 @@ var require_client_h1 = __commonJS({
           return -1;
         }
         this.bytesRead += buf.length;
-        if (request.onResponseData(buf) === false) {
+        if (request2.onResponseData(buf) === false) {
           return constants.ERROR.PAUSED;
         }
         return 0;
@@ -43991,8 +43991,8 @@ var require_client_h1 = __commonJS({
         }
         assert2(statusCode >= 100);
         assert2((this.headers.length & 1) === 0);
-        const request = client[kQueue][client[kRunningIdx]];
-        assert2(request);
+        const request2 = client[kQueue][client[kRunningIdx]];
+        assert2(request2);
         this.statusCode = 0;
         this.statusText = "";
         this.bytesRead = 0;
@@ -44004,11 +44004,11 @@ var require_client_h1 = __commonJS({
         if (statusCode < 200) {
           return 0;
         }
-        if (request.method !== "HEAD" && contentLength !== -1 && bytesRead !== contentLength) {
+        if (request2.method !== "HEAD" && contentLength !== -1 && bytesRead !== contentLength) {
           util.destroy(socket, new ResponseContentLengthMismatchError());
           return -1;
         }
-        request.onResponseEnd(headers);
+        request2.onResponseEnd(headers);
         client[kQueue][client[kRunningIdx]++] = null;
         socket[kSocketUsed] = client[kPending] === 0;
         if (socket[kWriting]) {
@@ -44077,8 +44077,8 @@ var require_client_h1 = __commonJS({
       return {
         version: "h1",
         defaultPipelining: 1,
-        write(request) {
-          return writeH1(client, request);
+        write(request2) {
+          return writeH1(client, request2);
         },
         resume() {
           resumeH1(client);
@@ -44105,18 +44105,18 @@ var require_client_h1 = __commonJS({
          * @param {import('../core/request.js')} request
          * @returns {boolean}
          */
-        busy(request) {
+        busy(request2) {
           if (socket[kWriting] || socket[kReset] || socket[kBlocking] || socket[kIdleSocketValidation] === 1) {
             return true;
           }
-          if (request) {
-            if (client[kRunning] > 0 && !request.idempotent) {
+          if (request2) {
+            if (client[kRunning] > 0 && !request2.idempotent) {
               return true;
             }
-            if (client[kRunning] > 0 && (request.upgrade || request.method === "CONNECT")) {
+            if (client[kRunning] > 0 && (request2.upgrade || request2.method === "CONNECT")) {
               return true;
             }
-            if (client[kRunning] > 0 && util.bodyLength(request.body) !== 0 && (util.isStream(request.body) || util.isAsyncIterable(request.body) || util.isFormDataLike(request.body))) {
+            if (client[kRunning] > 0 && util.bodyLength(request2.body) !== 0 && (util.isStream(request2.body) || util.isAsyncIterable(request2.body) || util.isFormDataLike(request2.body))) {
               return true;
             }
           }
@@ -44170,13 +44170,13 @@ var require_client_h1 = __commonJS({
         assert2(client[kPending] === 0);
         const requests = client[kQueue].splice(client[kRunningIdx]);
         for (let i = 0; i < requests.length; i++) {
-          const request = requests[i];
-          util.errorRequest(client, request, err);
+          const request2 = requests[i];
+          util.errorRequest(client, request2, err);
         }
       } else if (client[kRunning] > 0 && err.code !== "UND_ERR_INFO") {
-        const request = client[kQueue][client[kRunningIdx]];
+        const request2 = client[kQueue][client[kRunningIdx]];
         client[kQueue][client[kRunningIdx]++] = null;
-        util.errorRequest(client, request, err);
+        util.errorRequest(client, request2, err);
       }
       client[kPendingIdx] = client[kRunningIdx];
       assert2(client[kRunning] === 0);
@@ -44244,8 +44244,8 @@ var require_client_h1 = __commonJS({
           }
         } else if (client[kRunning] > 0 && socket[kParser].statusCode < 200) {
           if (socket[kParser].timeoutType !== TIMEOUT_HEADERS) {
-            const request = client[kQueue][client[kRunningIdx]];
-            const headersTimeout = request.headersTimeout != null ? request.headersTimeout : client[kHeadersTimeout];
+            const request2 = client[kQueue][client[kRunningIdx]];
+            const headersTimeout = request2.headersTimeout != null ? request2.headersTimeout : client[kHeadersTimeout];
             socket[kParser].setTimeout(headersTimeout, TIMEOUT_HEADERS);
           }
         }
@@ -44254,11 +44254,11 @@ var require_client_h1 = __commonJS({
     function shouldSendContentLength(method) {
       return method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE" && method !== "CONNECT";
     }
-    function setTypeOfService(socket, request) {
+    function setTypeOfService(socket, request2) {
       if (typeof socket.setTypeOfService !== "function") {
         return;
       }
-      const typeOfService = request.typeOfService;
+      const typeOfService = request2.typeOfService;
       if (typeOfService === void 0) {
         return;
       }
@@ -44272,26 +44272,26 @@ var require_client_h1 = __commonJS({
       } catch {
       }
     }
-    function writeH1(client, request) {
-      const { method, path, host, upgrade, blocking, reset } = request;
-      let { body, headers, contentLength } = request;
+    function writeH1(client, request2) {
+      const { method, path, host, upgrade, blocking, reset } = request2;
+      let { body, headers, contentLength } = request2;
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH" || method === "QUERY" || method === "PROPFIND" || method === "PROPPATCH";
       if (util.isFormDataLike(body)) {
         if (!extractBody) {
           extractBody = require_body().extractBody;
         }
         const [bodyStream, contentType] = extractBody(body);
-        if (request.contentType == null) {
+        if (request2.contentType == null) {
           headers.push("content-type", contentType);
         }
         body = bodyStream.stream;
         contentLength = bodyStream.length;
-      } else if (util.isBlobLike(body) && request.contentType == null) {
+      } else if (util.isBlobLike(body) && request2.contentType == null) {
         const contentType = body.type;
         if (contentType) {
           const contentTypeValue = `${contentType}`;
           if (!util.isValidHeaderValue(contentTypeValue)) {
-            util.errorRequest(client, request, new InvalidArgumentError("invalid content-type header"));
+            util.errorRequest(client, request2, new InvalidArgumentError("invalid content-type header"));
             return false;
           }
           headers.push("content-type", contentTypeValue);
@@ -44303,14 +44303,14 @@ var require_client_h1 = __commonJS({
       const bodyLength = util.bodyLength(body);
       contentLength = bodyLength ?? contentLength;
       if (contentLength === null) {
-        contentLength = request.contentLength;
+        contentLength = request2.contentLength;
       }
       if (contentLength === 0 && !expectsPayload) {
         contentLength = null;
       }
-      if (shouldSendContentLength(method) && contentLength > 0 && request.contentLength !== null && request.contentLength !== contentLength) {
+      if (shouldSendContentLength(method) && contentLength > 0 && request2.contentLength !== null && request2.contentLength !== contentLength) {
         if (client[kStrictContentLength]) {
-          util.errorRequest(client, request, new RequestContentLengthMismatchError());
+          util.errorRequest(client, request2, new RequestContentLengthMismatchError());
           return false;
         }
         process.emitWarning(new RequestContentLengthMismatchError());
@@ -44318,19 +44318,19 @@ var require_client_h1 = __commonJS({
       const socket = client[kSocket];
       clearIdleSocketValidation(socket);
       const abort = (err) => {
-        if (request.aborted || request.completed) {
+        if (request2.aborted || request2.completed) {
           return;
         }
-        util.errorRequest(client, request, err || new RequestAbortedError());
+        util.errorRequest(client, request2, err || new RequestAbortedError());
         util.destroy(body);
         util.destroy(socket, new InformationalError("aborted"));
       };
       try {
-        request.onRequestStart(abort, null);
+        request2.onRequestStart(abort, null);
       } catch (err) {
-        util.errorRequest(client, request, err);
+        util.errorRequest(client, request2, err);
       }
-      if (request.aborted) {
+      if (request2.aborted) {
         return false;
       }
       if (method === "HEAD") {
@@ -44348,7 +44348,7 @@ var require_client_h1 = __commonJS({
       if (blocking) {
         socket[kBlocking] = true;
       }
-      setTypeOfService(socket, request);
+      setTypeOfService(socket, request2);
       let header = `${method} ${path} HTTP/1.1\r
 `;
       if (typeof host === "string") {
@@ -44382,31 +44382,31 @@ upgrade: ${upgrade}\r
         }
       }
       if (channels.sendHeaders.hasSubscribers) {
-        channels.sendHeaders.publish({ request, headers: header, socket });
+        channels.sendHeaders.publish({ request: request2, headers: header, socket });
       }
       if (!body || bodyLength === 0) {
-        writeBuffer(abort, null, client, request, socket, contentLength, header, expectsPayload);
+        writeBuffer(abort, null, client, request2, socket, contentLength, header, expectsPayload);
       } else if (util.isBuffer(body)) {
-        writeBuffer(abort, body, client, request, socket, contentLength, header, expectsPayload);
+        writeBuffer(abort, body, client, request2, socket, contentLength, header, expectsPayload);
       } else if (util.isBlobLike(body)) {
         if (typeof body.stream === "function") {
-          writeIterable(abort, body.stream(), client, request, socket, contentLength, header, expectsPayload);
+          writeIterable(abort, body.stream(), client, request2, socket, contentLength, header, expectsPayload);
         } else {
-          writeBlob(abort, body, client, request, socket, contentLength, header, expectsPayload);
+          writeBlob(abort, body, client, request2, socket, contentLength, header, expectsPayload);
         }
       } else if (util.isStream(body)) {
-        writeStream(abort, body, client, request, socket, contentLength, header, expectsPayload);
+        writeStream(abort, body, client, request2, socket, contentLength, header, expectsPayload);
       } else if (util.isIterable(body)) {
-        writeIterable(abort, body, client, request, socket, contentLength, header, expectsPayload);
+        writeIterable(abort, body, client, request2, socket, contentLength, header, expectsPayload);
       } else {
         assert2(false);
       }
       return true;
     }
-    function writeStream(abort, body, client, request, socket, contentLength, header, expectsPayload) {
+    function writeStream(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
       assert2(contentLength !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
       let finished = false;
-      const writer = new AsyncWriter({ abort, socket, request, contentLength, client, expectsPayload, header });
+      const writer = new AsyncWriter({ abort, socket, request: request2, contentLength, client, expectsPayload, header });
       const onData = function(chunk) {
         if (finished) {
           return;
@@ -44472,7 +44472,7 @@ upgrade: ${upgrade}\r
         setImmediate(onClose);
       }
     }
-    function writeBuffer(abort, body, client, request, socket, contentLength, header, expectsPayload) {
+    function writeBuffer(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
       try {
         if (!body) {
           if (contentLength === 0) {
@@ -44492,18 +44492,18 @@ upgrade: ${upgrade}\r
 `, "latin1");
           socket.write(body);
           socket.uncork();
-          request.onBodySent(body);
-          if (!expectsPayload && request.reset !== false) {
+          request2.onBodySent(body);
+          if (!expectsPayload && request2.reset !== false) {
             socket[kReset] = true;
           }
         }
-        request.onRequestSent();
+        request2.onRequestSent();
         client[kResume]();
       } catch (err) {
         abort(err);
       }
     }
-    async function writeBlob(abort, body, client, request, socket, contentLength, header, expectsPayload) {
+    async function writeBlob(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
       try {
         if (contentLength != null && contentLength !== body.size) {
           throw new RequestContentLengthMismatchError();
@@ -44515,9 +44515,9 @@ upgrade: ${upgrade}\r
 `, "latin1");
         socket.write(buffer);
         socket.uncork();
-        request.onBodySent(buffer);
-        request.onRequestSent();
-        if (!expectsPayload && request.reset !== false) {
+        request2.onBodySent(buffer);
+        request2.onRequestSent();
+        if (!expectsPayload && request2.reset !== false) {
           socket[kReset] = true;
         }
         client[kResume]();
@@ -44525,7 +44525,7 @@ upgrade: ${upgrade}\r
         abort(err);
       }
     }
-    async function writeIterable(abort, body, client, request, socket, contentLength, header, expectsPayload) {
+    async function writeIterable(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
       assert2(contentLength !== 0 || client[kRunning] === 0, "iterator body cannot be pipelined");
       let callback = null;
       function onDrain() {
@@ -44544,7 +44544,7 @@ upgrade: ${upgrade}\r
         }
       });
       socket.on("close", onDrain).on("drain", onDrain);
-      const writer = new AsyncWriter({ abort, socket, request, contentLength, client, expectsPayload, header });
+      const writer = new AsyncWriter({ abort, socket, request: request2, contentLength, client, expectsPayload, header });
       try {
         for await (const chunk of body) {
           if (socket[kError]) {
@@ -44573,9 +44573,9 @@ upgrade: ${upgrade}\r
        * @param {boolean} arg.expectsPayload
        * @param {string} arg.header
        */
-      constructor({ abort, socket, request, contentLength, client, expectsPayload, header }) {
+      constructor({ abort, socket, request: request2, contentLength, client, expectsPayload, header }) {
         this.socket = socket;
-        this.request = request;
+        this.request = request2;
         this.contentLength = contentLength;
         this.client = client;
         this.bytesWritten = 0;
@@ -44589,7 +44589,7 @@ upgrade: ${upgrade}\r
        * @returns
        */
       write(chunk) {
-        const { socket, request, contentLength, client, bytesWritten, expectsPayload, header } = this;
+        const { socket, request: request2, contentLength, client, bytesWritten, expectsPayload, header } = this;
         if (socket[kError]) {
           throw socket[kError];
         }
@@ -44608,7 +44608,7 @@ upgrade: ${upgrade}\r
         }
         socket.cork();
         if (bytesWritten === 0) {
-          if (!expectsPayload && request.reset !== false) {
+          if (!expectsPayload && request2.reset !== false) {
             socket[kReset] = true;
           }
           if (contentLength === null) {
@@ -44628,7 +44628,7 @@ ${len.toString(16)}\r
         this.bytesWritten += len;
         const ret = socket.write(chunk);
         socket.uncork();
-        request.onBodySent(chunk);
+        request2.onBodySent(chunk);
         if (!ret) {
           if (socket[kParser].timeout && socket[kParser].timeoutType === TIMEOUT_HEADERS) {
             if (socket[kParser].timeout.refresh) {
@@ -44642,8 +44642,8 @@ ${len.toString(16)}\r
        * @returns {void}
        */
       end() {
-        const { socket, contentLength, client, bytesWritten, expectsPayload, header, request } = this;
-        request.onRequestSent();
+        const { socket, contentLength, client, bytesWritten, expectsPayload, header, request: request2 } = this;
+        request2.onRequestSent();
         socket[kWriting] = false;
         if (socket[kError]) {
           throw socket[kError];
@@ -44797,48 +44797,48 @@ var require_client_h2 = __commonJS({
     function getGoAwayPendingIdx(client, lastStreamID) {
       const maxAcceptedStreamID = Number.isInteger(lastStreamID) ? lastStreamID : Number.MAX_SAFE_INTEGER;
       for (let i = client[kRunningIdx]; i < client[kPendingIdx]; i++) {
-        const request = client[kQueue][i];
-        if (request == null) {
+        const request2 = client[kQueue][i];
+        if (request2 == null) {
           continue;
         }
-        if (typeof request[kRequestStreamId] !== "number" || request[kRequestStreamId] > maxAcceptedStreamID) {
+        if (typeof request2[kRequestStreamId] !== "number" || request2[kRequestStreamId] > maxAcceptedStreamID) {
           return i;
         }
       }
       return client[kPendingIdx];
     }
-    function detachRequestFromStream(request) {
-      request[kRequestStreamId] = null;
-      request[kRequestStream] = null;
-      request[kRequestStreamCleanup] = null;
+    function detachRequestFromStream(request2) {
+      request2[kRequestStreamId] = null;
+      request2[kRequestStream] = null;
+      request2[kRequestStreamCleanup] = null;
     }
-    function bindRequestToStream(request, stream, cleanup) {
-      const previousCleanup = request[kRequestStreamCleanup];
-      const previousStream = request[kRequestStream];
-      detachRequestFromStream(request);
+    function bindRequestToStream(request2, stream, cleanup) {
+      const previousCleanup = request2[kRequestStreamCleanup];
+      const previousStream = request2[kRequestStream];
+      detachRequestFromStream(request2);
       previousCleanup?.(previousStream);
-      request[kRequestStreamId] = stream.id;
-      request[kRequestStream] = stream;
-      request[kRequestStreamCleanup] = cleanup;
+      request2[kRequestStreamId] = stream.id;
+      request2[kRequestStream] = stream;
+      request2[kRequestStreamCleanup] = cleanup;
     }
-    function clearRequestStream(request) {
-      const cleanup = request[kRequestStreamCleanup];
-      const stream = request[kRequestStream];
-      detachRequestFromStream(request);
+    function clearRequestStream(request2) {
+      const cleanup = request2[kRequestStreamCleanup];
+      const stream = request2[kRequestStream];
+      detachRequestFromStream(request2);
       cleanup?.(stream);
     }
-    function requeueUnsentRequest(client, request) {
-      client[kQueue].splice(client[kPendingIdx] + 1, 0, request);
+    function requeueUnsentRequest(client, request2) {
+      client[kQueue].splice(client[kPendingIdx] + 1, 0, request2);
     }
-    function completeRequest(client, request, resetPendingIdx = false) {
+    function completeRequest(client, request2, resetPendingIdx = false) {
       const queue = client[kQueue];
       const runningIdx = client[kRunningIdx];
-      if (runningIdx < client[kPendingIdx] && queue[runningIdx] === request) {
+      if (runningIdx < client[kPendingIdx] && queue[runningIdx] === request2) {
         queue[runningIdx] = null;
         client[kRunningIdx] = runningIdx + 1;
         return;
       }
-      const index = queue.indexOf(request, runningIdx);
+      const index = queue.indexOf(request2, runningIdx);
       if (index === -1 || index >= client[kPendingIdx]) {
         return;
       }
@@ -44848,13 +44848,13 @@ var require_client_h2 = __commonJS({
         client[kPendingIdx] = client[kRunningIdx];
       }
     }
-    function canReplayRequest(request) {
-      const { body } = request;
+    function canReplayRequest(request2) {
+      const { body } = request2;
       return body == null || util.isBuffer(body) || util.isBlobLike(body);
     }
-    function registerGoAwayRefusal(request) {
-      const attempts = (request[kGoAwayReplayAttempts] ?? 0) + 1;
-      request[kGoAwayReplayAttempts] = attempts;
+    function registerGoAwayRefusal(request2) {
+      const attempts = (request2[kGoAwayReplayAttempts] ?? 0) + 1;
+      request2[kGoAwayReplayAttempts] = attempts;
       return attempts <= MAX_GOAWAY_REPLAY_ATTEMPTS;
     }
     function closeStream(stream, code = NGHTTP2_REFUSED_STREAM) {
@@ -44865,9 +44865,9 @@ var require_client_h2 = __commonJS({
         }
       }
     }
-    function detachRequestStreamForClose(request) {
-      const stream = request[kRequestStream];
-      clearRequestStream(request);
+    function detachRequestStreamForClose(request2) {
+      const stream = request2[kRequestStream];
+      clearRequestStream(request2);
       severRequestStream(stream);
       return stream;
     }
@@ -44942,8 +44942,8 @@ var require_client_h2 = __commonJS({
          * @param {import('../core/request.js')} request
          * @returns {boolean}
         */
-        write(request) {
-          return writeH2(client, request);
+        write(request2) {
+          return writeH2(client, request2);
         },
         /**
          * @returns {void}
@@ -44972,18 +44972,18 @@ var require_client_h2 = __commonJS({
          * @param {import('../core/request.js')} request
          * @returns {boolean}
         */
-        busy(request) {
+        busy(request2) {
           if (session[kRemoteSettings] === false && client[kRunning] > 0) {
             return true;
           }
           if (client[kRunning] >= client[kMaxConcurrentStreams]) {
             return true;
           }
-          if (request != null) {
+          if (request2 != null) {
             if (client[kRunning] > 0) {
-              if ((request.upgrade === "websocket" || request.method === "CONNECT") && session[kRemoteSettings] === false) return true;
+              if ((request2.upgrade === "websocket" || request2.method === "CONNECT") && session[kRemoteSettings] === false) return true;
             } else {
-              return (request.upgrade === "websocket" || request.method === "CONNECT") && session[kRemoteSettings] === false;
+              return (request2.upgrade === "websocket" || request2.method === "CONNECT") && session[kRemoteSettings] === false;
             }
           }
           return false;
@@ -45163,13 +45163,13 @@ var require_client_h2 = __commonJS({
       const retriableRequests = [];
       const streamsToClose = [];
       for (let i = pendingIdx; i < previousPendingIdx; i++) {
-        const request = client[kQueue][i];
-        if (request != null) {
-          streamsToClose.push(detachRequestStreamForClose(request));
-          if (canReplayRequest(request) && registerGoAwayRefusal(request)) {
-            retriableRequests.push(request);
+        const request2 = client[kQueue][i];
+        if (request2 != null) {
+          streamsToClose.push(detachRequestStreamForClose(request2));
+          if (canReplayRequest(request2) && registerGoAwayRefusal(request2)) {
+            retriableRequests.push(request2);
           } else {
-            util.errorRequest(client, request, err);
+            util.errorRequest(client, request2, err);
           }
         }
       }
@@ -45213,9 +45213,9 @@ var require_client_h2 = __commonJS({
         assert2(client[kPending] === 0);
         const requests = client[kQueue].splice(client[kRunningIdx]);
         for (let i = 0; i < requests.length; i++) {
-          const request = requests[i];
-          if (request != null) {
-            util.errorRequest(client, request, err);
+          const request2 = requests[i];
+          if (request2 != null) {
+            util.errorRequest(client, request2, err);
           }
         }
       }
@@ -45333,9 +45333,9 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request } = state;
-      if (request[kRequestStream] === stream) {
-        detachRequestFromStream(request);
+      const { request: request2 } = state;
+      if (request2[kRequestStream] === stream) {
+        detachRequestFromStream(request2);
       }
       removeUpgradeStreamListeners(stream);
       if (!stream.destroyed && !stream.closed) {
@@ -45346,8 +45346,8 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request } = state;
-      if (state.responseReceived || request.aborted || request.completed) {
+      const { request: request2 } = state;
+      if (state.responseReceived || request2.aborted || request2.completed) {
         return;
       }
       releaseUpgradeStream(state.stream);
@@ -45371,25 +45371,25 @@ var require_client_h2 = __commonJS({
     function onUpgradeResponse(headers, _flags) {
       const stream = this;
       const state = stream[kRequestStreamState];
-      const { request } = state;
+      const { request: request2 } = state;
       state.responseReceived = true;
       const statusCode = headers[HTTP2_HEADER_STATUS];
       delete headers[HTTP2_HEADER_STATUS];
-      request.onRequestUpgrade(statusCode, headers, stream);
-      if (request.aborted || request.completed) {
+      request2.onRequestUpgrade(statusCode, headers, stream);
+      if (request2.aborted || request2.completed) {
         return;
       }
       removeUpgradeStreamListeners(stream);
-      detachRequestFromStream(request);
+      detachRequestFromStream(request2);
       finalizeRequest(state);
     }
     function setupUpgradeStream(stream, state) {
-      const { request, headersTimeout, session } = state;
+      const { request: request2, headersTimeout, session } = state;
       stream[kHTTP2Stream] = true;
       stream[kHTTP2Session] = session;
       stream[kRequestStreamState] = state;
       state.stream = stream;
-      bindRequestToStream(request, stream, releaseUpgradeStream);
+      bindRequestToStream(request2, stream, releaseUpgradeStream);
       stream.once("response", onUpgradeResponse);
       stream.on("error", onUpgradeStreamError);
       stream.once("end", onUpgradeStreamEnd);
@@ -45407,7 +45407,7 @@ var require_client_h2 = __commonJS({
       completeRequest(state.client, state.request, resetPendingIdx);
       state.client[kResume]();
     }
-    function openStream(client, request, session, abort, headers, options) {
+    function openStream(client, request2, session, abort, headers, options) {
       try {
         return session.request(headers, options);
       } catch (err) {
@@ -45416,7 +45416,7 @@ var require_client_h2 = __commonJS({
           wrappedErr2.cause = err;
           session[kError] = wrappedErr2;
           resetHttp2Session(session, wrappedErr2);
-          requeueUnsentRequest(client, request);
+          requeueUnsentRequest(client, request2);
           return null;
         }
         const wrappedErr = new InformationalError(err.message, { cause: err });
@@ -45428,13 +45428,13 @@ var require_client_h2 = __commonJS({
         return null;
       }
     }
-    function writeH2(client, request) {
-      const headersTimeout = request.headersTimeout ?? client[kHeadersTimeout];
-      const bodyTimeout = request.bodyTimeout ?? client[kBodyTimeout];
+    function writeH2(client, request2) {
+      const headersTimeout = request2.headersTimeout ?? client[kHeadersTimeout];
+      const bodyTimeout = request2.bodyTimeout ?? client[kBodyTimeout];
       const session = client[kHTTP2Session];
-      const { method, path, host, upgrade, expectContinue, signal, protocol, headers: reqHeaders } = request;
+      const { method, path, host, upgrade, expectContinue, signal, protocol, headers: reqHeaders } = request2;
       if (upgrade != null && upgrade !== "websocket") {
-        util.errorRequest(client, request, new InvalidArgumentError(`Custom upgrade "${upgrade}" not supported over HTTP/2`));
+        util.errorRequest(client, request2, new InvalidArgumentError(`Custom upgrade "${upgrade}" not supported over HTTP/2`));
         return false;
       }
       const headers = buildRequestHeaders(reqHeaders);
@@ -45442,13 +45442,13 @@ var require_client_h2 = __commonJS({
       headers[HTTP2_HEADER_METHOD] = method;
       const state = {
         abort: null,
-        body: request.body,
+        body: request2.body,
         bytesRead: 0,
         client,
         contentLength: null,
         expectsPayload: false,
         maxResponseSize: client[kMaxResponseSize],
-        request,
+        request: request2,
         headersTimeout,
         bodyTimeout,
         requestFinalized: false,
@@ -45460,13 +45460,13 @@ var require_client_h2 = __commonJS({
         stream: null
       };
       const abort = (err, resetPendingIdx = false) => {
-        if (request.aborted || request.completed) {
+        if (request2.aborted || request2.completed) {
           return;
         }
         err = err || new RequestAbortedError();
-        util.errorRequest(client, request, err);
+        util.errorRequest(client, request2, err);
         if (state.stream != null) {
-          clearRequestStream(request);
+          clearRequestStream(request2);
           const stream2 = state.stream;
           stream2.close();
           if (!stream2.destroyed) {
@@ -45480,18 +45480,18 @@ var require_client_h2 = __commonJS({
       state.abort = abort;
       let stream = null;
       try {
-        request.onRequestStart(abort, null);
+        request2.onRequestStart(abort, null);
       } catch (err) {
-        util.errorRequest(client, request, err);
+        util.errorRequest(client, request2, err);
       }
-      if (request.aborted) {
+      if (request2.aborted) {
         return false;
       }
       if (upgrade || method === "CONNECT") {
         refH2Session(session);
         if (upgrade === "websocket") {
           if (session[kEnableConnectProtocol] === false) {
-            util.errorRequest(client, request, new InformationalError("HTTP/2: Extended CONNECT protocol not supported by server"));
+            util.errorRequest(client, request2, new InformationalError("HTTP/2: Extended CONNECT protocol not supported by server"));
             unrefH2Session(session);
             return false;
           }
@@ -45503,7 +45503,7 @@ var require_client_h2 = __commonJS({
           } else {
             headers[HTTP2_HEADER_SCHEME] = protocol === "http:" ? "http" : "https";
           }
-          stream = openStream(client, request, session, abort, headers, { endStream: false, signal });
+          stream = openStream(client, request2, session, abort, headers, { endStream: false, signal });
           if (stream == null) {
             unrefH2Session(session);
             return false;
@@ -45511,7 +45511,7 @@ var require_client_h2 = __commonJS({
           setupUpgradeStream(stream, state);
           return true;
         }
-        stream = openStream(client, request, session, abort, headers, { endStream: false, signal });
+        stream = openStream(client, request2, session, abort, headers, { endStream: false, signal });
         if (stream == null) {
           unrefH2Session(session);
           return false;
@@ -45535,14 +45535,14 @@ var require_client_h2 = __commonJS({
         contentLength = bodyStream.length;
       }
       if (contentLength == null) {
-        contentLength = request.contentLength;
+        contentLength = request2.contentLength;
       }
       if (contentLength === 0 && !expectsPayload) {
         contentLength = null;
       }
-      if (shouldSendContentLength(method) && contentLength > 0 && request.contentLength != null && request.contentLength !== contentLength) {
+      if (shouldSendContentLength(method) && contentLength > 0 && request2.contentLength != null && request2.contentLength !== contentLength) {
         if (client[kStrictContentLength]) {
-          util.errorRequest(client, request, new RequestContentLengthMismatchError());
+          util.errorRequest(client, request2, new RequestContentLengthMismatchError());
           return false;
         }
         process.emitWarning(new RequestContentLengthMismatchError());
@@ -45558,7 +45558,7 @@ var require_client_h2 = __commonJS({
           header += `${key}: ${headers[key]}\r
 `;
         }
-        channels.sendHeaders.publish({ request, headers: header, socket: session[kSocket] });
+        channels.sendHeaders.publish({ request: request2, headers: header, socket: session[kSocket] });
       }
       const shouldEndStream = body === null || contentLength === 0;
       state.body = body;
@@ -45567,7 +45567,7 @@ var require_client_h2 = __commonJS({
       if (expectContinue) {
         headers[HTTP2_HEADER_EXPECT] = "100-continue";
       }
-      stream = openStream(client, request, session, abort, headers, { endStream: shouldEndStream, signal });
+      stream = openStream(client, request2, session, abort, headers, { endStream: shouldEndStream, signal });
       if (stream == null) {
         return false;
       }
@@ -45581,7 +45581,7 @@ var require_client_h2 = __commonJS({
       }
       stream[kHTTP2Session] = session;
       stream.on("close", completeRequestStream);
-      bindRequestToStream(request, stream, releaseRequestStream);
+      bindRequestToStream(request2, stream, releaseRequestStream);
       if (expectContinue) {
         stream.once("continue", writeBodyH2);
       }
@@ -45621,9 +45621,9 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request } = state;
-      if (request[kRequestStream] === stream) {
-        detachRequestFromStream(request);
+      const { request: request2 } = state;
+      if (request2[kRequestStream] === stream) {
+        detachRequestFromStream(request2);
       }
       if (!stream.destroyed && !stream.closed) {
         removeRequestStreamListeners(stream);
@@ -45636,8 +45636,8 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request, maxResponseSize } = state;
-      if (request.aborted || request.completed) {
+      const { request: request2, maxResponseSize } = state;
+      if (request2.aborted || request2.completed) {
         return;
       }
       if (maxResponseSize > -1 && state.bytesRead + chunk.length > maxResponseSize) {
@@ -45645,7 +45645,7 @@ var require_client_h2 = __commonJS({
         return;
       }
       state.bytesRead += chunk.length;
-      if (request.onResponseData(chunk) === false) {
+      if (request2.onResponseData(chunk) === false) {
         stream.pause();
       }
     }
@@ -45655,13 +45655,13 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request } = state;
-      if (request.aborted || request.completed) {
+      const { request: request2 } = state;
+      if (request2.aborted || request2.completed) {
         return;
       }
       const statusCode = headers[HTTP2_HEADER_STATUS];
       delete headers[HTTP2_HEADER_STATUS];
-      request.onResponseStart(Number(statusCode), headers, noop, "");
+      request2.onResponseStart(Number(statusCode), headers, noop, "");
     }
     function onResponse(headers) {
       const stream = this;
@@ -45669,7 +45669,7 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request } = state;
+      const { request: request2 } = state;
       stream.off("response", onResponse);
       if (state.body != null && !state.bodySent && !stream.writableEnded) {
         stream.removeListener("continue", writeBodyH2);
@@ -45677,16 +45677,16 @@ var require_client_h2 = __commonJS({
       }
       const statusCode = headers[HTTP2_HEADER_STATUS];
       delete headers[HTTP2_HEADER_STATUS];
-      request.onResponseStarted();
+      request2.onResponseStarted();
       state.responseReceived = true;
       if (state.headersTimeout || state.bodyTimeout) {
         stream.setTimeout(state.bodyTimeout);
       }
-      if (request.aborted || request.completed) {
+      if (request2.aborted || request2.completed) {
         releaseRequestStream(stream);
         return;
       }
-      if (request.onResponseStart(Number(statusCode), headers, stream.resume.bind(stream), "") === false) {
+      if (request2.onResponseStart(Number(statusCode), headers, stream.resume.bind(stream), "") === false) {
         stream.pause();
       }
       stream.on("data", onData);
@@ -45697,10 +45697,10 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request } = state;
+      const { request: request2 } = state;
       stream.off("end", onEnd);
       if (state.responseReceived) {
-        if (!request.aborted && !request.completed) {
+        if (!request2.aborted && !request2.completed) {
           state.pendingEnd = true;
           completeRequestStream.call(stream);
         }
@@ -45709,16 +45709,16 @@ var require_client_h2 = __commonJS({
       }
     }
     function retryRefusedStream(stream, state) {
-      const { client, request } = state;
-      if (state.responseReceived || request.aborted || request.completed || request[kRefusedStreamRetry] || !canReplayRequest(request)) {
+      const { client, request: request2 } = state;
+      if (state.responseReceived || request2.aborted || request2.completed || request2[kRefusedStreamRetry] || !canReplayRequest(request2)) {
         return false;
       }
-      request[kRefusedStreamRetry] = true;
-      detachRequestStreamForClose(request);
+      request2[kRefusedStreamRetry] = true;
+      detachRequestStreamForClose(request2);
       state.stream = null;
       state.requestFinalized = true;
-      completeRequest(client, request);
-      client[kQueue].splice(client[kPendingIdx], 0, request);
+      completeRequest(client, request2);
+      client[kQueue].splice(client[kPendingIdx], 0, request2);
       client[kResume]();
       return true;
     }
@@ -45765,10 +45765,10 @@ var require_client_h2 = __commonJS({
       if (state == null) {
         return;
       }
-      const { request } = state;
+      const { request: request2 } = state;
       stream.off("trailers", onTrailers);
       stream.off("data", onData);
-      if (request.aborted || request.completed) {
+      if (request2.aborted || request2.completed) {
         return;
       }
       state.trailers = trailers;
@@ -45777,14 +45777,14 @@ var require_client_h2 = __commonJS({
       const stream = this;
       const state = stream[kRequestStreamState];
       state.bodySent = true;
-      const { abort, body, client, contentLength, expectsPayload, request } = state;
+      const { abort, body, client, contentLength, expectsPayload, request: request2 } = state;
       if (!body || contentLength === 0) {
         writeBuffer(
           abort,
           stream,
           null,
           client,
-          request,
+          request2,
           client[kSocket],
           contentLength,
           expectsPayload
@@ -45795,7 +45795,7 @@ var require_client_h2 = __commonJS({
           stream,
           body,
           client,
-          request,
+          request2,
           client[kSocket],
           contentLength,
           expectsPayload
@@ -45807,7 +45807,7 @@ var require_client_h2 = __commonJS({
             stream,
             body.stream(),
             client,
-            request,
+            request2,
             client[kSocket],
             contentLength,
             expectsPayload
@@ -45818,7 +45818,7 @@ var require_client_h2 = __commonJS({
             stream,
             body,
             client,
-            request,
+            request2,
             client[kSocket],
             contentLength,
             expectsPayload
@@ -45832,7 +45832,7 @@ var require_client_h2 = __commonJS({
           stream,
           body,
           client,
-          request,
+          request2,
           contentLength
         );
       } else if (util.isIterable(body)) {
@@ -45841,7 +45841,7 @@ var require_client_h2 = __commonJS({
           stream,
           body,
           client,
-          request,
+          request2,
           client[kSocket],
           contentLength,
           expectsPayload
@@ -45850,7 +45850,7 @@ var require_client_h2 = __commonJS({
         assert2(false);
       }
     }
-    function writeBuffer(abort, h2stream, body, client, request, socket, contentLength, expectsPayload) {
+    function writeBuffer(abort, h2stream, body, client, request2, socket, contentLength, expectsPayload) {
       try {
         if (body != null && util.isBuffer(body)) {
           assert2(contentLength === body.byteLength, "buffer body must have content length");
@@ -45858,18 +45858,18 @@ var require_client_h2 = __commonJS({
           h2stream.write(body);
           h2stream.uncork();
           h2stream.end();
-          request.onBodySent(body);
+          request2.onBodySent(body);
         }
         if (!expectsPayload) {
           socket[kReset] = true;
         }
-        request.onRequestSent();
+        request2.onRequestSent();
         client[kResume]();
       } catch (error61) {
         abort(error61);
       }
     }
-    function writeStream(abort, socket, expectsPayload, h2stream, body, client, request, contentLength) {
+    function writeStream(abort, socket, expectsPayload, h2stream, body, client, request2, contentLength) {
       assert2(contentLength !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
       const pipe2 = pipeline2(
         body,
@@ -45880,7 +45880,7 @@ var require_client_h2 = __commonJS({
             abort(err);
           } else {
             util.removeAllListeners(pipe2);
-            request.onRequestSent();
+            request2.onRequestSent();
             if (!expectsPayload) {
               socket[kReset] = true;
             }
@@ -45890,10 +45890,10 @@ var require_client_h2 = __commonJS({
       );
       util.addListener(pipe2, "data", onPipeData);
       function onPipeData(chunk) {
-        request.onBodySent(chunk);
+        request2.onBodySent(chunk);
       }
     }
-    async function writeBlob(abort, h2stream, body, client, request, socket, contentLength, expectsPayload) {
+    async function writeBlob(abort, h2stream, body, client, request2, socket, contentLength, expectsPayload) {
       try {
         if (contentLength != null && contentLength !== body.size) {
           throw new RequestContentLengthMismatchError();
@@ -45903,8 +45903,8 @@ var require_client_h2 = __commonJS({
         h2stream.write(buffer);
         h2stream.uncork();
         h2stream.end();
-        request.onBodySent(buffer);
-        request.onRequestSent();
+        request2.onBodySent(buffer);
+        request2.onRequestSent();
         if (!expectsPayload) {
           socket[kReset] = true;
         }
@@ -45913,7 +45913,7 @@ var require_client_h2 = __commonJS({
         abort(err);
       }
     }
-    async function writeIterable(abort, h2stream, body, client, request, socket, contentLength, expectsPayload) {
+    async function writeIterable(abort, h2stream, body, client, request2, socket, contentLength, expectsPayload) {
       assert2(contentLength !== 0 || client[kRunning] === 0, "iterator body cannot be pipelined");
       let callback = null;
       function onDrain() {
@@ -45938,13 +45938,13 @@ var require_client_h2 = __commonJS({
             throw socket[kError];
           }
           const res = h2stream.write(chunk);
-          request.onBodySent(chunk);
+          request2.onBodySent(chunk);
           if (!res) {
             await waitForDrain();
           }
         }
         h2stream.end();
-        request.onRequestSent();
+        request2.onRequestSent();
         if (!expectsPayload) {
           socket[kReset] = true;
         }
@@ -46282,10 +46282,10 @@ var require_client = __commonJS({
         this.once("connect", cb);
       }
       [kDispatch](opts, handler) {
-        const request = new Request(this[kUrl].origin, opts, handler);
-        this[kQueue].push(request);
+        const request2 = new Request(this[kUrl].origin, opts, handler);
+        this[kQueue].push(request2);
         if (this[kResuming]) {
-        } else if (util.bodyLength(request.body) == null && util.isIterable(request.body)) {
+        } else if (util.bodyLength(request2.body) == null && util.isIterable(request2.body)) {
           this[kResuming] = 1;
           queueMicrotask(() => resume(this));
         } else {
@@ -46309,9 +46309,9 @@ var require_client = __commonJS({
         return new Promise((resolve) => {
           const requests = this[kQueue].splice(this[kPendingIdx]);
           for (let i = 0; i < requests.length; i++) {
-            const request = requests[i];
-            if (request != null) {
-              util.errorRequest(this, request, err);
+            const request2 = requests[i];
+            if (request2 != null) {
+              util.errorRequest(this, request2, err);
             }
           }
           const callback = () => {
@@ -46336,9 +46336,9 @@ var require_client = __commonJS({
         assert2(client[kPendingIdx] === client[kRunningIdx]);
         const requests = client[kQueue].splice(client[kRunningIdx]);
         for (let i = 0; i < requests.length; i++) {
-          const request = requests[i];
-          if (request != null) {
-            util.errorRequest(client, request, err);
+          const request2 = requests[i];
+          if (request2 != null) {
+            util.errorRequest(client, request2, err);
           }
         }
         assert2(client[kSize] === 0);
@@ -46453,8 +46453,8 @@ var require_client = __commonJS({
           util.errorRequest(client, running[i], err);
         }
         while (client[kPending] > 0 && client[kQueue][client[kPendingIdx]].servername === client[kServerName]) {
-          const request = client[kQueue].splice(client[kPendingIdx], 1)[0];
-          util.errorRequest(client, request, err);
+          const request2 = client[kQueue].splice(client[kPendingIdx], 1)[0];
+          util.errorRequest(client, request2, err);
         }
       } else {
         onError(client, err);
@@ -46509,15 +46509,15 @@ var require_client = __commonJS({
         if (client[kRunning] >= (getMaxConcurrent(client) || 1)) {
           return;
         }
-        const request = client[kQueue][client[kPendingIdx]];
-        if (request === null) {
+        const request2 = client[kQueue][client[kPendingIdx]];
+        if (request2 === null) {
           return;
         }
-        if (client[kUrl].protocol === "https:" && client[kServerName] !== request.servername) {
+        if (client[kUrl].protocol === "https:" && client[kServerName] !== request2.servername) {
           if (client[kRunning] > 0) {
             return;
           }
-          client[kServerName] = request.servername;
+          client[kServerName] = request2.servername;
           client[kHTTPContext]?.destroy(new InformationalError("servername changed"), () => {
             client[kHTTPContext] = null;
             resume(client);
@@ -46527,17 +46527,17 @@ var require_client = __commonJS({
           return;
         }
         if (!client[kHTTPContext]) {
-          client[kServerName] = request.servername;
+          client[kServerName] = request2.servername;
           connect(client);
           return;
         }
         if (client[kHTTPContext].destroyed) {
           return;
         }
-        if (client[kHTTPContext].busy(request)) {
+        if (client[kHTTPContext].busy(request2)) {
           return;
         }
-        if (!request.aborted && client[kHTTPContext].write(request)) {
+        if (!request2.aborted && client[kHTTPContext].write(request2)) {
           client[kPendingIdx]++;
         } else {
           client[kQueue].splice(client[kPendingIdx], 1);
@@ -47733,13 +47733,13 @@ var require_socks5_client = __commonJS({
         }
         debug("starting handshake with", this.authMethods.length, "auth methods");
         this.state = STATES.HANDSHAKING;
-        const request = Buffer2.alloc(2 + this.authMethods.length);
-        request[0] = SOCKS_VERSION;
-        request[1] = this.authMethods.length;
+        const request2 = Buffer2.alloc(2 + this.authMethods.length);
+        request2[0] = SOCKS_VERSION;
+        request2[1] = this.authMethods.length;
         this.authMethods.forEach((method, i) => {
-          request[2 + i] = method;
+          request2[2 + i] = method;
         });
-        this.socket.write(request);
+        this.socket.write(request2);
       }
       /**
        * Handle handshake response from server
@@ -47781,13 +47781,13 @@ var require_socks5_client = __commonJS({
         if (usernameBuffer.length > 255 || passwordBuffer.length > 255) {
           throw new InvalidArgumentError("Username or password too long");
         }
-        const request = Buffer2.alloc(3 + usernameBuffer.length + passwordBuffer.length);
-        request[0] = 1;
-        request[1] = usernameBuffer.length;
-        usernameBuffer.copy(request, 2);
-        request[2 + usernameBuffer.length] = passwordBuffer.length;
-        passwordBuffer.copy(request, 3 + usernameBuffer.length);
-        this.socket.write(request);
+        const request2 = Buffer2.alloc(3 + usernameBuffer.length + passwordBuffer.length);
+        request2[0] = 1;
+        request2[1] = usernameBuffer.length;
+        usernameBuffer.copy(request2, 2);
+        request2[2 + usernameBuffer.length] = passwordBuffer.length;
+        passwordBuffer.copy(request2, 3 + usernameBuffer.length);
+        this.socket.write(request2);
       }
       /**
        * Handle authentication response
@@ -47822,22 +47822,22 @@ var require_socks5_client = __commonJS({
         }
         debug("connecting to", address, port);
         this.state = STATES.CONNECTING;
-        const request = this.buildConnectRequest(COMMANDS.CONNECT, address, port);
-        this.socket.write(request);
+        const request2 = this.buildConnectRequest(COMMANDS.CONNECT, address, port);
+        this.socket.write(request2);
       }
       /**
        * Build a SOCKS5 request
        */
       buildConnectRequest(command, address, port) {
         const { type: addressType, buffer: addressBuffer } = parseAddress(address);
-        const request = Buffer2.alloc(4 + addressBuffer.length + 2);
-        request[0] = SOCKS_VERSION;
-        request[1] = command;
-        request[2] = 0;
-        request[3] = addressType;
-        addressBuffer.copy(request, 4);
-        request.writeUInt16BE(port, 4 + addressBuffer.length);
-        return request;
+        const request2 = Buffer2.alloc(4 + addressBuffer.length + 2);
+        request2[0] = SOCKS_VERSION;
+        request2[1] = command;
+        request2[2] = 0;
+        request2[3] = addressType;
+        addressBuffer.copy(request2, 4);
+        request2.writeUInt16BE(port, 4 + addressBuffer.length);
+        return request2;
       }
       /**
        * Handle CONNECT response
@@ -49763,10 +49763,10 @@ var require_api_request = __commonJS({
         }
       }
     };
-    function request(opts, callback) {
+    function request2(opts, callback) {
       if (callback === void 0) {
         return new Promise((resolve, reject) => {
-          request.call(this, opts, (err, data) => {
+          request2.call(this, opts, (err, data) => {
             return err ? reject(err) : resolve(data);
           });
         });
@@ -49782,7 +49782,7 @@ var require_api_request = __commonJS({
         queueMicrotask(() => callback(err, { opaque }));
       }
     }
-    module.exports = request;
+    module.exports = request2;
     module.exports.RequestHandler = RequestHandler;
   }
 });
@@ -52035,8 +52035,8 @@ var require_snapshot_recorder = __commonJS({
         if (this.isUrlExcluded(requestOpts)) {
           return;
         }
-        const request = formatRequestKey(requestOpts, this.#headerFilters, this.matchOptions);
-        const hash2 = createRequestHash(request);
+        const request2 = formatRequestKey(requestOpts, this.#headerFilters, this.matchOptions);
+        const hash2 = createRequestHash(request2);
         const normalizedHeaders = normalizeHeaders(response.headers);
         const responseData = {
           statusCode: response.statusCode,
@@ -52054,7 +52054,7 @@ var require_snapshot_recorder = __commonJS({
           existingSnapshot.timestamp = (/* @__PURE__ */ new Date()).toISOString();
         } else {
           this.#snapshots.set(hash2, {
-            request,
+            request: request2,
             responses: [responseData],
             // Always store as array for consistency
             callCount: 0,
@@ -52088,8 +52088,8 @@ var require_snapshot_recorder = __commonJS({
         if (this.isUrlExcluded(requestOpts)) {
           return void 0;
         }
-        const request = formatRequestKey(requestOpts, this.#headerFilters, this.matchOptions);
-        const hash2 = createRequestHash(request);
+        const request2 = formatRequestKey(requestOpts, this.#headerFilters, this.matchOptions);
+        const hash2 = createRequestHash(request2);
         const snapshot = this.#snapshots.get(hash2);
         if (!snapshot) return void 0;
         const currentCallCount = snapshot.callCount || 0;
@@ -52184,8 +52184,8 @@ var require_snapshot_recorder = __commonJS({
        * @returns {boolean} - True if snapshot was deleted, false if not found
        */
       deleteSnapshot(requestOpts) {
-        const request = formatRequestKey(requestOpts, this.#headerFilters, this.matchOptions);
-        const hash2 = createRequestHash(request);
+        const request2 = formatRequestKey(requestOpts, this.#headerFilters, this.matchOptions);
+        const hash2 = createRequestHash(request2);
         return this.#snapshots.delete(hash2);
       }
       /**
@@ -52194,8 +52194,8 @@ var require_snapshot_recorder = __commonJS({
        * @returns {SnapshotInfo|null} - Snapshot information or null if not found
        */
       getSnapshotInfo(requestOpts) {
-        const request = formatRequestKey(requestOpts, this.#headerFilters, this.matchOptions);
-        const hash2 = createRequestHash(request);
+        const request2 = formatRequestKey(requestOpts, this.#headerFilters, this.matchOptions);
+        const hash2 = createRequestHash(request2);
         const snapshot = this.#snapshots.get(hash2);
         if (!snapshot) return null;
         return {
@@ -52494,16 +52494,16 @@ var require_snapshot_agent = __commonJS({
        */
       #setupMockInterceptors() {
         for (const snapshot of this[kSnapshotRecorder].getSnapshots()) {
-          const { request, responses, response } = snapshot;
-          const url2 = new URL(request.url);
+          const { request: request2, responses, response } = snapshot;
+          const url2 = new URL(request2.url);
           const mockPool = this.get(url2.origin);
           const responseData = responses ? responses[0] : response;
           if (!responseData) continue;
           mockPool.intercept({
             path: url2.pathname + url2.search,
-            method: request.method,
-            headers: request.headers,
-            body: request.body
+            method: request2.method,
+            headers: request2.headers,
+            body: request2.body
           }).reply(responseData.statusCode, responseData.body, {
             headers: responseData.headers,
             trailers: responseData.trailers
@@ -57980,7 +57980,7 @@ var require_request4 = __commonJS({
         webidl.argumentLengthCheck(arguments, 1, prefix);
         input2 = webidl.converters.RequestInfo(input2);
         init = webidl.converters.RequestInit(init);
-        let request = null;
+        let request2 = null;
         let fallbackMode = null;
         const baseUrl = environmentSettingsObject.settingsObject.baseUrl;
         let signal = null;
@@ -57997,18 +57997,18 @@ var require_request4 = __commonJS({
               "Request cannot be constructed from a URL that includes credentials: " + input2
             );
           }
-          request = makeRequest({ urlList: [parsedURL] });
+          request2 = makeRequest({ urlList: [parsedURL] });
           fallbackMode = "cors";
         } else {
           assert2(webidl.is.Request(input2));
-          request = input2.#state;
+          request2 = input2.#state;
           signal = input2.#signal;
           this.#dispatcher = init.dispatcher || input2.#dispatcher;
         }
         const origin = environmentSettingsObject.settingsObject.origin;
         let window = "client";
-        if (request.window?.constructor?.name === "EnvironmentSettingsObject" && sameOrigin(request.window, origin)) {
-          window = request.window;
+        if (request2.window?.constructor?.name === "EnvironmentSettingsObject" && sameOrigin(request2.window, origin)) {
+          window = request2.window;
         }
         if (init.window != null) {
           throw new TypeError(`'window' option '${window}' must be null`);
@@ -58016,66 +58016,66 @@ var require_request4 = __commonJS({
         if ("window" in init) {
           window = "no-window";
         }
-        request = makeRequest({
+        request2 = makeRequest({
           // URL request’s URL.
           // undici implementation note: this is set as the first item in request's urlList in makeRequest
           // method request’s method.
-          method: request.method,
+          method: request2.method,
           // header list A copy of request’s header list.
           // undici implementation note: headersList is cloned in makeRequest
-          headersList: request.headersList,
+          headersList: request2.headersList,
           // unsafe-request flag Set.
-          unsafeRequest: request.unsafeRequest,
+          unsafeRequest: request2.unsafeRequest,
           // client This’s relevant settings object.
           client: environmentSettingsObject.settingsObject,
           // window window.
           window,
           // priority request’s priority.
-          priority: request.priority,
+          priority: request2.priority,
           // origin request’s origin. The propagation of the origin is only significant for navigation requests
           // being handled by a service worker. In this scenario a request can have an origin that is different
           // from the current client.
-          origin: request.origin,
+          origin: request2.origin,
           // referrer request’s referrer.
-          referrer: request.referrer,
+          referrer: request2.referrer,
           // referrer policy request’s referrer policy.
-          referrerPolicy: request.referrerPolicy,
+          referrerPolicy: request2.referrerPolicy,
           // mode request’s mode.
-          mode: request.mode,
+          mode: request2.mode,
           // credentials mode request’s credentials mode.
-          credentials: request.credentials,
+          credentials: request2.credentials,
           // cache mode request’s cache mode.
-          cache: request.cache,
+          cache: request2.cache,
           // redirect mode request’s redirect mode.
-          redirect: request.redirect,
+          redirect: request2.redirect,
           // integrity metadata request’s integrity metadata.
-          integrity: request.integrity,
+          integrity: request2.integrity,
           // keepalive request’s keepalive.
-          keepalive: request.keepalive,
+          keepalive: request2.keepalive,
           // reload-navigation flag request’s reload-navigation flag.
-          reloadNavigation: request.reloadNavigation,
+          reloadNavigation: request2.reloadNavigation,
           // history-navigation flag request’s history-navigation flag.
-          historyNavigation: request.historyNavigation,
+          historyNavigation: request2.historyNavigation,
           // URL list A clone of request’s URL list.
-          urlList: [...request.urlList]
+          urlList: [...request2.urlList]
         });
         const initHasKey = Object.keys(init).length !== 0;
         if (initHasKey) {
-          if (request.mode === "navigate") {
-            request.mode = "same-origin";
+          if (request2.mode === "navigate") {
+            request2.mode = "same-origin";
           }
-          request.reloadNavigation = false;
-          request.historyNavigation = false;
-          request.origin = "client";
-          request.referrer = "client";
-          request.referrerPolicy = "";
-          request.url = request.urlList[request.urlList.length - 1];
-          request.urlList = [request.url];
+          request2.reloadNavigation = false;
+          request2.historyNavigation = false;
+          request2.origin = "client";
+          request2.referrer = "client";
+          request2.referrerPolicy = "";
+          request2.url = request2.urlList[request2.urlList.length - 1];
+          request2.urlList = [request2.url];
         }
         if (init.referrer !== void 0) {
           const referrer = init.referrer;
           if (referrer === "") {
-            request.referrer = "no-referrer";
+            request2.referrer = "no-referrer";
           } else {
             let parsedReferrer;
             try {
@@ -58084,14 +58084,14 @@ var require_request4 = __commonJS({
               throw new TypeError(`Referrer "${referrer}" is not a valid URL.`, { cause: err });
             }
             if (parsedReferrer.protocol === "about:" && parsedReferrer.hostname === "client" || origin && !sameOrigin(parsedReferrer, environmentSettingsObject.settingsObject.baseUrl)) {
-              request.referrer = "client";
+              request2.referrer = "client";
             } else {
-              request.referrer = parsedReferrer;
+              request2.referrer = parsedReferrer;
             }
           }
         }
         if (init.referrerPolicy !== void 0) {
-          request.referrerPolicy = init.referrerPolicy;
+          request2.referrerPolicy = init.referrerPolicy;
         }
         let mode;
         if (init.mode !== void 0) {
@@ -58106,33 +58106,33 @@ var require_request4 = __commonJS({
           });
         }
         if (mode != null) {
-          request.mode = mode;
+          request2.mode = mode;
         }
         if (init.credentials !== void 0) {
-          request.credentials = init.credentials;
+          request2.credentials = init.credentials;
         }
         if (init.cache !== void 0) {
-          request.cache = init.cache;
+          request2.cache = init.cache;
         }
-        if (request.cache === "only-if-cached" && request.mode !== "same-origin") {
+        if (request2.cache === "only-if-cached" && request2.mode !== "same-origin") {
           throw new TypeError(
             "'only-if-cached' can be set only with 'same-origin' mode"
           );
         }
         if (init.redirect !== void 0) {
-          request.redirect = init.redirect;
+          request2.redirect = init.redirect;
         }
         if (init.integrity != null) {
-          request.integrity = String(init.integrity);
+          request2.integrity = String(init.integrity);
         }
         if (init.keepalive !== void 0) {
-          request.keepalive = Boolean(init.keepalive);
+          request2.keepalive = Boolean(init.keepalive);
         }
         if (init.method !== void 0) {
           let method = init.method;
           const mayBeNormalized = normalizedMethodRecords[method];
           if (mayBeNormalized !== void 0) {
-            request.method = mayBeNormalized;
+            request2.method = mayBeNormalized;
           } else {
             if (!isValidHTTPToken(method)) {
               throw new TypeError(`'${method}' is not a valid HTTP method.`);
@@ -58142,9 +58142,9 @@ var require_request4 = __commonJS({
               throw new TypeError(`'${method}' HTTP method is unsupported.`);
             }
             method = normalizedMethodRecordsBase[upperCase] ?? method;
-            request.method = method;
+            request2.method = method;
           }
-          if (!patchMethodWarning && request.method === "patch") {
+          if (!patchMethodWarning && request2.method === "patch") {
             process.emitWarning("Using `patch` is highly likely to result in a `405 Method Not Allowed`. `PATCH` is much more likely to succeed.", {
               code: "UNDICI-FETCH-patch"
             });
@@ -58154,7 +58154,7 @@ var require_request4 = __commonJS({
         if (init.signal !== void 0) {
           signal = init.signal;
         }
-        this.#state = request;
+        this.#state = request2;
         const ac = new AbortController();
         this.#signal = ac.signal;
         if (signal != null) {
@@ -58177,12 +58177,12 @@ var require_request4 = __commonJS({
           }
         }
         this.#headers = new Headers(kConstruct);
-        setHeadersList(this.#headers, request.headersList);
+        setHeadersList(this.#headers, request2.headersList);
         setHeadersGuard(this.#headers, "request");
         if (mode === "no-cors") {
-          if (!corsSafeListedMethodsSet.has(request.method)) {
+          if (!corsSafeListedMethodsSet.has(request2.method)) {
             throw new TypeError(
-              `'${request.method} is unsupported in no-cors mode.`
+              `'${request2.method} is unsupported in no-cors mode.`
             );
           }
           setHeadersGuard(this.#headers, "request-no-cors");
@@ -58201,14 +58201,14 @@ var require_request4 = __commonJS({
           }
         }
         const inputBody = webidl.is.Request(input2) ? input2.#state.body : null;
-        if ((init.body != null || inputBody != null) && (request.method === "GET" || request.method === "HEAD")) {
+        if ((init.body != null || inputBody != null) && (request2.method === "GET" || request2.method === "HEAD")) {
           throw new TypeError("Request with GET/HEAD method cannot have body.");
         }
         let initBody = null;
         if (init.body != null) {
           const [extractedBody, contentType] = extractBody(
             init.body,
-            request.keepalive
+            request2.keepalive
           );
           initBody = extractedBody;
           if (contentType && !getHeadersList(this.#headers).contains("content-type", true)) {
@@ -58220,12 +58220,12 @@ var require_request4 = __commonJS({
           if (initBody != null && init.duplex == null) {
             throw new TypeError("RequestInit: duplex option is required when sending a body.");
           }
-          if (request.mode !== "same-origin" && request.mode !== "cors") {
+          if (request2.mode !== "same-origin" && request2.mode !== "cors") {
             throw new TypeError(
               'If request is made from ReadableStream, mode should be "same-origin" or "cors"'
             );
           }
-          request.useCORSPreflightFlag = true;
+          request2.useCORSPreflightFlag = true;
         }
         let finalBody = inputOrInitBody;
         if (initBody == null && inputBody != null) {
@@ -58415,50 +58415,50 @@ var require_request4 = __commonJS({
        * @param {Request} request
        * @param {AbortSignal} newSignal
        */
-      static setRequestSignal(request, newSignal) {
-        request.#signal = newSignal;
-        return request;
+      static setRequestSignal(request2, newSignal) {
+        request2.#signal = newSignal;
+        return request2;
       }
       /**
        * @param {Request} request
        */
-      static getRequestDispatcher(request) {
-        return request.#dispatcher;
+      static getRequestDispatcher(request2) {
+        return request2.#dispatcher;
       }
       /**
        * @param {Request} request
        * @param {import('../../dispatcher/dispatcher')} newDispatcher
        */
-      static setRequestDispatcher(request, newDispatcher) {
-        request.#dispatcher = newDispatcher;
+      static setRequestDispatcher(request2, newDispatcher) {
+        request2.#dispatcher = newDispatcher;
       }
       /**
        * @param {Request} request
        * @param {Headers} newHeaders
        */
-      static setRequestHeaders(request, newHeaders) {
-        request.#headers = newHeaders;
+      static setRequestHeaders(request2, newHeaders) {
+        request2.#headers = newHeaders;
       }
       /**
        * @param {Request} request
        */
-      static getRequestState(request) {
-        return request.#state;
+      static getRequestState(request2) {
+        return request2.#state;
       }
       /**
        * @param {Request} request
        * @param {any} newState
        */
-      static setRequestState(request, newState) {
-        request.#state = newState;
+      static setRequestState(request2, newState) {
+        request2.#state = newState;
       }
       /**
        * Removes the `abort` listener that makes this request's signal follow the
        * signal passed to its constructor, if any. Idempotent.
        * @param {Request} request
        */
-      static removeRequestAbortListener(request) {
-        request.#abortCleanup?.();
+      static removeRequestAbortListener(request2) {
+        request2.#abortCleanup?.();
       }
     };
     var { setRequestSignal, getRequestDispatcher, setRequestDispatcher, setRequestHeaders, getRequestState, setRequestState, removeRequestAbortListener } = Request;
@@ -58515,23 +58515,23 @@ var require_request4 = __commonJS({
         headersList: init.headersList ? new HeadersList(init.headersList) : new HeadersList()
       };
     }
-    function cloneRequest(request) {
-      const newRequest = makeRequest({ ...request, body: null });
-      if (request.body != null) {
-        newRequest.body = cloneBody(request.body);
+    function cloneRequest(request2) {
+      const newRequest = makeRequest({ ...request2, body: null });
+      if (request2.body != null) {
+        newRequest.body = cloneBody(request2.body);
       }
       return newRequest;
     }
     function fromInnerRequest(innerRequest, dispatcher, signal, guard) {
-      const request = new Request(kConstruct);
-      setRequestState(request, innerRequest);
-      setRequestDispatcher(request, dispatcher);
-      setRequestSignal(request, signal);
+      const request2 = new Request(kConstruct);
+      setRequestState(request2, innerRequest);
+      setRequestDispatcher(request2, dispatcher);
+      setRequestSignal(request2, signal);
       const headers = new Headers(kConstruct);
-      setRequestHeaders(request, headers);
+      setRequestHeaders(request2, headers);
       setHeadersList(headers, innerRequest.headersList);
       setHeadersGuard(headers, guard);
-      return request;
+      return request2;
     }
     Object.defineProperties(Request.prototype, {
       method: kEnumerableProperty,
@@ -58946,14 +58946,14 @@ var require_fetch = __commonJS({
         p.reject(e);
         return p.promise;
       }
-      const request = getRequestState(requestObject);
+      const request2 = getRequestState(requestObject);
       if (requestObject.signal.aborted) {
-        abortFetch(p, request, null, requestObject.signal.reason, null);
+        abortFetch(p, request2, null, requestObject.signal.reason, null);
         return p.promise;
       }
-      const globalObject = request.client.globalObject;
+      const globalObject = request2.client.globalObject;
       if (globalObject?.constructor?.name === "ServiceWorkerGlobalScope") {
-        request.serviceWorkers = "none";
+        request2.serviceWorkers = "none";
       }
       let responseObject = null;
       let locallyAborted = false;
@@ -58965,7 +58965,7 @@ var require_fetch = __commonJS({
           assert2(controller != null);
           controller.abort(requestObject.signal.reason);
           const realResponse = responseObject?.deref();
-          abortFetch(p, request, realResponse, requestObject.signal.reason, controller.controller);
+          abortFetch(p, request2, realResponse, requestObject.signal.reason, controller.controller);
         }
       );
       const cleanupAbortListeners = () => {
@@ -58977,7 +58977,7 @@ var require_fetch = __commonJS({
           return;
         }
         if (response.aborted) {
-          abortFetch(p, request, responseObject, controller.serializedAbortReason, controller.controller);
+          abortFetch(p, request2, responseObject, controller.serializedAbortReason, controller.controller);
           cleanupAbortListeners();
           return;
         }
@@ -58991,7 +58991,7 @@ var require_fetch = __commonJS({
         p = null;
       };
       controller = fetching({
-        request,
+        request: request2,
         processResponseEndOfBody: (response) => {
           handleFetchDone(response);
           cleanupAbortListeners();
@@ -59041,12 +59041,12 @@ var require_fetch = __commonJS({
       );
     }
     var markResourceTiming = performance.markResourceTiming;
-    function abortFetch(p, request, responseObject, error61, controller) {
+    function abortFetch(p, request2, responseObject, error61, controller) {
       if (p) {
         p.reject(error61);
       }
-      if (request.body?.stream != null && isReadable(request.body.stream)) {
-        request.body.stream.cancel(error61).catch((err) => {
+      if (request2.body?.stream != null && isReadable(request2.body.stream)) {
+        request2.body.stream.cancel(error61).catch((err) => {
           if (err.code === "ERR_INVALID_STATE") {
             return;
           }
@@ -59062,7 +59062,7 @@ var require_fetch = __commonJS({
       }
     }
     function fetching({
-      request,
+      request: request2,
       processRequestBodyChunkLength,
       processRequestEndOfBody,
       processResponse,
@@ -59077,9 +59077,9 @@ var require_fetch = __commonJS({
       assert2(dispatcher);
       let taskDestination = null;
       let crossOriginIsolatedCapability = false;
-      if (request.client != null) {
-        taskDestination = request.client.globalObject;
-        crossOriginIsolatedCapability = request.client.crossOriginIsolatedCapability;
+      if (request2.client != null) {
+        taskDestination = request2.client.globalObject;
+        crossOriginIsolatedCapability = request2.client.crossOriginIsolatedCapability;
       }
       const currentTime = coarsenedSharedCurrentTime(crossOriginIsolatedCapability);
       const timingInfo = createOpaqueTimingInfo({
@@ -59087,7 +59087,7 @@ var require_fetch = __commonJS({
       });
       const fetchParams = {
         controller: new Fetch(dispatcher),
-        request,
+        request: request2,
         timingInfo,
         processRequestBodyChunkLength,
         processRequestEndOfBody,
@@ -59099,79 +59099,79 @@ var require_fetch = __commonJS({
         // Keep requestObject alive to prevent its AbortController from being GC'd
         requestObject
       };
-      assert2(!request.body || request.body.stream);
-      if (request.window === "client") {
-        request.window = request.client?.globalObject?.constructor?.name === "Window" ? request.client : "no-window";
+      assert2(!request2.body || request2.body.stream);
+      if (request2.window === "client") {
+        request2.window = request2.client?.globalObject?.constructor?.name === "Window" ? request2.client : "no-window";
       }
-      if (request.origin === "client") {
-        request.origin = request.client.origin;
+      if (request2.origin === "client") {
+        request2.origin = request2.client.origin;
       }
-      if (request.policyContainer === "client") {
-        if (request.client != null) {
-          request.policyContainer = clonePolicyContainer(
-            request.client.policyContainer
+      if (request2.policyContainer === "client") {
+        if (request2.client != null) {
+          request2.policyContainer = clonePolicyContainer(
+            request2.client.policyContainer
           );
         } else {
-          request.policyContainer = makePolicyContainer();
+          request2.policyContainer = makePolicyContainer();
         }
       }
-      if (!request.headersList.contains("accept", true)) {
+      if (!request2.headersList.contains("accept", true)) {
         const value = "*/*";
-        request.headersList.append("accept", value, true);
+        request2.headersList.append("accept", value, true);
       }
-      if (!request.headersList.contains("accept-language", true)) {
-        request.headersList.append("accept-language", "*", true);
+      if (!request2.headersList.contains("accept-language", true)) {
+        request2.headersList.append("accept-language", "*", true);
       }
-      if (request.priority === null) {
+      if (request2.priority === null) {
       }
-      if (subresourceSet.has(request.destination)) {
+      if (subresourceSet.has(request2.destination)) {
       }
       mainFetch(fetchParams, false);
       return fetchParams.controller;
     }
     async function mainFetch(fetchParams, recursive2) {
       try {
-        const request = fetchParams.request;
+        const request2 = fetchParams.request;
         let response = null;
-        if (request.localURLsOnly && !urlIsLocal(requestCurrentURL(request))) {
+        if (request2.localURLsOnly && !urlIsLocal(requestCurrentURL(request2))) {
           response = makeNetworkError("local URLs only");
         }
-        tryUpgradeRequestToAPotentiallyTrustworthyURL(request);
-        if (requestBadPort(request) === "blocked") {
+        tryUpgradeRequestToAPotentiallyTrustworthyURL(request2);
+        if (requestBadPort(request2) === "blocked") {
           response = makeNetworkError("bad port");
         }
-        if (request.referrerPolicy === "") {
-          request.referrerPolicy = request.policyContainer.referrerPolicy;
+        if (request2.referrerPolicy === "") {
+          request2.referrerPolicy = request2.policyContainer.referrerPolicy;
         }
-        if (request.referrer !== "no-referrer") {
-          request.referrer = determineRequestsReferrer(request);
+        if (request2.referrer !== "no-referrer") {
+          request2.referrer = determineRequestsReferrer(request2);
         }
         if (response === null) {
-          const currentURL = requestCurrentURL(request);
+          const currentURL = requestCurrentURL(request2);
           if (
             // - request’s current URL’s origin is same origin with request’s origin,
             //   and request’s response tainting is "basic"
-            sameOrigin(currentURL, request.url) && request.responseTainting === "basic" || // request’s current URL’s scheme is "data"
+            sameOrigin(currentURL, request2.url) && request2.responseTainting === "basic" || // request’s current URL’s scheme is "data"
             currentURL.protocol === "data:" || // - request’s mode is "navigate" or "websocket"
-            (request.mode === "navigate" || request.mode === "websocket")
+            (request2.mode === "navigate" || request2.mode === "websocket")
           ) {
-            request.responseTainting = "basic";
+            request2.responseTainting = "basic";
             response = await schemeFetch(fetchParams);
-          } else if (request.mode === "same-origin") {
+          } else if (request2.mode === "same-origin") {
             response = makeNetworkError('request mode cannot be "same-origin"');
-          } else if (request.mode === "no-cors") {
-            if (request.redirect !== "follow") {
+          } else if (request2.mode === "no-cors") {
+            if (request2.redirect !== "follow") {
               response = makeNetworkError(
                 'redirect mode cannot be "follow" for "no-cors" request'
               );
             } else {
-              request.responseTainting = "opaque";
+              request2.responseTainting = "opaque";
               response = await schemeFetch(fetchParams);
             }
-          } else if (!urlIsHttpHttpsScheme(requestCurrentURL(request))) {
+          } else if (!urlIsHttpHttpsScheme(requestCurrentURL(request2))) {
             response = makeNetworkError("URL scheme must be a HTTP(S) scheme");
           } else {
-            request.responseTainting = "cors";
+            request2.responseTainting = "cors";
             response = await httpFetch(fetchParams);
           }
         }
@@ -59179,13 +59179,13 @@ var require_fetch = __commonJS({
           return response;
         }
         if (response.status !== 0 && !response.internalResponse) {
-          if (request.responseTainting === "cors") {
+          if (request2.responseTainting === "cors") {
           }
-          if (request.responseTainting === "basic") {
+          if (request2.responseTainting === "basic") {
             response = filterResponse(response, "basic");
-          } else if (request.responseTainting === "cors") {
+          } else if (request2.responseTainting === "cors") {
             response = filterResponse(response, "cors");
-          } else if (request.responseTainting === "opaque") {
+          } else if (request2.responseTainting === "opaque") {
             response = filterResponse(response, "opaque");
           } else {
             assert2(false);
@@ -59193,26 +59193,26 @@ var require_fetch = __commonJS({
         }
         let internalResponse = response.status === 0 ? response : response.internalResponse;
         if (internalResponse.urlList.length === 0) {
-          internalResponse.urlList.push(...request.urlList);
+          internalResponse.urlList.push(...request2.urlList);
         }
-        if (!request.timingAllowFailed) {
+        if (!request2.timingAllowFailed) {
           response.timingAllowPassed = true;
         }
-        if (response.type === "opaque" && internalResponse.status === 206 && internalResponse.rangeRequested && !request.headers.contains("range", true)) {
+        if (response.type === "opaque" && internalResponse.status === 206 && internalResponse.rangeRequested && !request2.headers.contains("range", true)) {
           response = internalResponse = makeNetworkError();
         }
-        if (response.status !== 0 && (request.method === "HEAD" || request.method === "CONNECT" || nullBodyStatus.includes(internalResponse.status))) {
+        if (response.status !== 0 && (request2.method === "HEAD" || request2.method === "CONNECT" || nullBodyStatus.includes(internalResponse.status))) {
           internalResponse.body = null;
           fetchParams.controller.dump = true;
         }
-        if (request.integrity) {
+        if (request2.integrity) {
           const processBodyError = (reason) => fetchFinale(fetchParams, makeNetworkError(reason));
-          if (request.responseTainting === "opaque" || response.body == null) {
+          if (request2.responseTainting === "opaque" || response.body == null) {
             processBodyError(response.error);
             return;
           }
           const processBody = (bytes) => {
-            if (!bytesMatch(bytes, request.integrity)) {
+            if (!bytesMatch(bytes, request2.integrity)) {
               processBodyError("integrity mismatch");
               return;
             }
@@ -59231,8 +59231,8 @@ var require_fetch = __commonJS({
       if (isCancelled(fetchParams) && fetchParams.request.redirectCount === 0) {
         return Promise.resolve(makeAppropriateNetworkError(fetchParams));
       }
-      const { request } = fetchParams;
-      const { protocol: scheme } = requestCurrentURL(request);
+      const { request: request2 } = fetchParams;
+      const { protocol: scheme } = requestCurrentURL(request2);
       switch (scheme) {
         case "about:": {
           return Promise.resolve(makeNetworkError("about scheme is not supported"));
@@ -59241,19 +59241,19 @@ var require_fetch = __commonJS({
           if (!resolveObjectURL) {
             resolveObjectURL = __require("node:buffer").resolveObjectURL;
           }
-          const blobURLEntry = requestCurrentURL(request);
+          const blobURLEntry = requestCurrentURL(request2);
           if (blobURLEntry.search.length !== 0) {
             return Promise.resolve(makeNetworkError("NetworkError when attempting to fetch resource."));
           }
           const blob = resolveObjectURL(blobURLEntry.toString());
-          if (request.method !== "GET" || !webidl.is.Blob(blob)) {
+          if (request2.method !== "GET" || !webidl.is.Blob(blob)) {
             return Promise.resolve(makeNetworkError("invalid method"));
           }
           const response = makeResponse();
           const fullLength = blob.size;
           const serializedFullLength = isomorphicEncode(`${fullLength}`);
           const type = blob.type;
-          if (!request.headersList.contains("range", true)) {
+          if (!request2.headersList.contains("range", true)) {
             const bodyWithType = extractBody(blob);
             response.statusText = "OK";
             response.body = bodyWithType[0];
@@ -59261,7 +59261,7 @@ var require_fetch = __commonJS({
             response.headersList.set("content-type", type, true);
           } else {
             response.rangeRequested = true;
-            const rangeHeader = request.headersList.get("range", true);
+            const rangeHeader = request2.headersList.get("range", true);
             const rangeValue = simpleRangeHeaderValue(rangeHeader, true);
             if (rangeValue === "failure") {
               return Promise.resolve(makeNetworkError("failed to fetch the data URL"));
@@ -59292,7 +59292,7 @@ var require_fetch = __commonJS({
           return Promise.resolve(response);
         }
         case "data:": {
-          const currentURL = requestCurrentURL(request);
+          const currentURL = requestCurrentURL(request2);
           const dataURLStruct = dataURLProcessor(currentURL);
           if (dataURLStruct === "failure") {
             return Promise.resolve(makeNetworkError("failed to fetch the data URL"));
@@ -59381,41 +59381,41 @@ var require_fetch = __commonJS({
       }
     }
     async function httpFetch(fetchParams) {
-      const request = fetchParams.request;
+      const request2 = fetchParams.request;
       let response = null;
       let actualResponse = null;
       const timingInfo = fetchParams.timingInfo;
-      if (request.serviceWorkers === "all") {
+      if (request2.serviceWorkers === "all") {
       }
       if (response === null) {
-        if (request.redirect === "follow") {
-          request.serviceWorkers = "none";
+        if (request2.redirect === "follow") {
+          request2.serviceWorkers = "none";
         }
         actualResponse = response = await httpNetworkOrCacheFetch(fetchParams);
-        if (request.responseTainting === "cors" && corsCheck(request, response) === "failure") {
+        if (request2.responseTainting === "cors" && corsCheck(request2, response) === "failure") {
           return makeNetworkError("cors failure");
         }
-        if (TAOCheck(request, response) === "failure") {
-          request.timingAllowFailed = true;
+        if (TAOCheck(request2, response) === "failure") {
+          request2.timingAllowFailed = true;
         }
       }
-      if ((request.responseTainting === "opaque" || response.type === "opaque") && crossOriginResourcePolicyCheck(
-        request.origin,
-        request.client,
-        request.destination,
+      if ((request2.responseTainting === "opaque" || response.type === "opaque") && crossOriginResourcePolicyCheck(
+        request2.origin,
+        request2.client,
+        request2.destination,
         actualResponse
       ) === "blocked") {
         return makeNetworkError("blocked");
       }
       if (redirectStatusSet.has(actualResponse.status)) {
-        if (request.redirect !== "manual") {
+        if (request2.redirect !== "manual") {
           fetchParams.controller.connection.destroy(void 0, false);
         }
-        if (request.redirect === "error") {
+        if (request2.redirect === "error") {
           response = makeNetworkError("unexpected redirect");
-        } else if (request.redirect === "manual") {
+        } else if (request2.redirect === "manual") {
           response = actualResponse;
-        } else if (request.redirect === "follow") {
+        } else if (request2.redirect === "follow") {
           response = await httpRedirectFetch(fetchParams, response);
         } else {
           assert2(false);
@@ -59425,13 +59425,13 @@ var require_fetch = __commonJS({
       return response;
     }
     function httpRedirectFetch(fetchParams, response) {
-      const request = fetchParams.request;
+      const request2 = fetchParams.request;
       const actualResponse = response.internalResponse ? response.internalResponse : response;
       let locationURL;
       try {
         locationURL = responseLocationURL(
           actualResponse,
-          requestCurrentURL(request).hash
+          requestCurrentURL(request2).hash
         );
         if (locationURL == null) {
           return response;
@@ -59442,68 +59442,68 @@ var require_fetch = __commonJS({
       if (!urlIsHttpHttpsScheme(locationURL)) {
         return Promise.resolve(makeNetworkError("URL scheme must be a HTTP(S) scheme"));
       }
-      if (request.redirectCount === 20) {
+      if (request2.redirectCount === 20) {
         return Promise.resolve(makeNetworkError("redirect count exceeded"));
       }
-      request.redirectCount += 1;
-      if (request.mode === "cors" && (locationURL.username || locationURL.password) && !sameOrigin(request, locationURL)) {
+      request2.redirectCount += 1;
+      if (request2.mode === "cors" && (locationURL.username || locationURL.password) && !sameOrigin(request2, locationURL)) {
         return Promise.resolve(makeNetworkError('cross origin not allowed for request mode "cors"'));
       }
-      if (request.responseTainting === "cors" && (locationURL.username || locationURL.password)) {
+      if (request2.responseTainting === "cors" && (locationURL.username || locationURL.password)) {
         return Promise.resolve(makeNetworkError(
           'URL cannot contain credentials for request mode "cors"'
         ));
       }
-      if (actualResponse.status !== 303 && request.body != null && request.body.source == null) {
+      if (actualResponse.status !== 303 && request2.body != null && request2.body.source == null) {
         return Promise.resolve(makeNetworkError());
       }
-      if ([301, 302].includes(actualResponse.status) && request.method === "POST" || actualResponse.status === 303 && !GET_OR_HEAD.includes(request.method)) {
-        request.method = "GET";
-        request.body = null;
+      if ([301, 302].includes(actualResponse.status) && request2.method === "POST" || actualResponse.status === 303 && !GET_OR_HEAD.includes(request2.method)) {
+        request2.method = "GET";
+        request2.body = null;
         for (const headerName of requestBodyHeader) {
-          request.headersList.delete(headerName);
+          request2.headersList.delete(headerName);
         }
       }
-      if (!sameOrigin(requestCurrentURL(request), locationURL)) {
-        request.headersList.delete("authorization", true);
-        request.headersList.delete("proxy-authorization", true);
-        request.headersList.delete("cookie", true);
-        request.headersList.delete("host", true);
+      if (!sameOrigin(requestCurrentURL(request2), locationURL)) {
+        request2.headersList.delete("authorization", true);
+        request2.headersList.delete("proxy-authorization", true);
+        request2.headersList.delete("cookie", true);
+        request2.headersList.delete("host", true);
       }
-      if (request.body != null) {
-        assert2(request.body.source != null);
-        request.body = safelyExtractBody(request.body.source)[0];
+      if (request2.body != null) {
+        assert2(request2.body.source != null);
+        request2.body = safelyExtractBody(request2.body.source)[0];
       }
       const timingInfo = fetchParams.timingInfo;
       timingInfo.redirectEndTime = timingInfo.postRedirectStartTime = coarsenedSharedCurrentTime(fetchParams.crossOriginIsolatedCapability);
       if (timingInfo.redirectStartTime === 0) {
         timingInfo.redirectStartTime = timingInfo.startTime;
       }
-      request.urlList.push(locationURL);
-      setRequestReferrerPolicyOnRedirect(request, actualResponse);
+      request2.urlList.push(locationURL);
+      setRequestReferrerPolicyOnRedirect(request2, actualResponse);
       return mainFetch(fetchParams, true);
     }
     async function httpNetworkOrCacheFetch(fetchParams, isAuthenticationFetch = false, isNewConnectionFetch = false) {
-      const request = fetchParams.request;
+      const request2 = fetchParams.request;
       let httpFetchParams = null;
       let httpRequest = null;
       let response = null;
       const httpCache = null;
       const revalidatingFlag = false;
-      if (request.window === "no-window" && request.redirect === "error") {
+      if (request2.window === "no-window" && request2.redirect === "error") {
         httpFetchParams = fetchParams;
-        httpRequest = request;
+        httpRequest = request2;
       } else {
-        if (request.body?.source != null) {
-          httpRequest = cloneRequest(request);
+        if (request2.body?.source != null) {
+          httpRequest = cloneRequest(request2);
         } else {
-          httpRequest = cloneRequest({ ...request, body: null });
-          httpRequest.body = request.body;
+          httpRequest = cloneRequest({ ...request2, body: null });
+          httpRequest.body = request2.body;
         }
         httpFetchParams = { ...fetchParams };
         httpFetchParams.request = httpRequest;
       }
-      const includeCredentials = request.credentials === "include" || request.credentials === "same-origin" && request.responseTainting === "basic";
+      const includeCredentials = request2.credentials === "include" || request2.credentials === "same-origin" && request2.responseTainting === "basic";
       const contentLength = httpRequest.body ? httpRequest.body.length : null;
       let contentLengthHeaderValue = null;
       if (httpRequest.body == null && ["POST", "PUT"].includes(httpRequest.method)) {
@@ -59590,14 +59590,14 @@ var require_fetch = __commonJS({
         response.rangeRequested = true;
       }
       response.requestIncludesCredentials = includeCredentials;
-      if (response.status === 401 && httpRequest.responseTainting !== "cors" && includeCredentials && (request.useURLCredentials !== void 0 || isTraversableNavigable(request.traversableForUserPrompts))) {
-        if (request.body != null) {
-          if (request.body.source == null) {
+      if (response.status === 401 && httpRequest.responseTainting !== "cors" && includeCredentials && (request2.useURLCredentials !== void 0 || isTraversableNavigable(request2.traversableForUserPrompts))) {
+        if (request2.body != null) {
+          if (request2.body.source == null) {
             return response;
           }
-          request.body = safelyExtractBody(request.body.source)[0];
+          request2.body = safelyExtractBody(request2.body.source)[0];
         }
-        if (request.useURLCredentials === void 0 || isAuthenticationFetch) {
+        if (request2.useURLCredentials === void 0 || isAuthenticationFetch) {
           if (isCancelled(fetchParams)) {
             return makeAppropriateNetworkError(fetchParams);
           }
@@ -59607,7 +59607,7 @@ var require_fetch = __commonJS({
         response = await httpNetworkOrCacheFetch(fetchParams, true);
       }
       if (response.status === 407) {
-        if (request.window === "no-window") {
+        if (request2.window === "no-window") {
           return makeNetworkError();
         }
         if (isCancelled(fetchParams)) {
@@ -59619,7 +59619,7 @@ var require_fetch = __commonJS({
         // response’s status is 421
         response.status === 421 && // isNewConnectionFetch is false
         !isNewConnectionFetch && // request’s body is null, or request’s body is non-null and request’s body’s source is non-null
-        (request.body == null || request.body.source != null)
+        (request2.body == null || request2.body.source != null)
       ) {
         if (isCancelled(fetchParams)) {
           return makeAppropriateNetworkError(fetchParams);
@@ -59649,21 +59649,21 @@ var require_fetch = __commonJS({
           }
         }
       };
-      const request = fetchParams.request;
+      const request2 = fetchParams.request;
       let response = null;
       const timingInfo = fetchParams.timingInfo;
       const httpCache = null;
       if (httpCache == null) {
-        request.cache = "no-store";
+        request2.cache = "no-store";
       }
       const newConnection = forceNewConnection ? "yes" : "no";
-      if (request.mode === "websocket") {
+      if (request2.mode === "websocket") {
       } else {
       }
       let requestBody = null;
-      if (request.body == null && fetchParams.processRequestEndOfBody) {
+      if (request2.body == null && fetchParams.processRequestEndOfBody) {
         queueMicrotask(() => fetchParams.processRequestEndOfBody());
-      } else if (request.body != null) {
+      } else if (request2.body != null) {
         const processBodyChunk = async function* (bytes) {
           if (isCancelled(fetchParams)) {
             return;
@@ -59691,7 +59691,7 @@ var require_fetch = __commonJS({
         };
         requestBody = (async function* () {
           try {
-            for await (const bytes of request.body.stream) {
+            for await (const bytes of request2.body.stream) {
               yield* processBodyChunk(bytes);
             }
             processEndOfBody();
@@ -59798,7 +59798,7 @@ var require_fetch = __commonJS({
       }
       return response;
       function dispatch({ body }) {
-        const url2 = requestCurrentURL(request);
+        const url2 = requestCurrentURL(request2);
         const agent = fetchParams.controller.dispatcher;
         const path = url2.pathname + url2.search;
         const hasTrailingQuestionMark = url2.search.length === 0 && url2.href[url2.href.length - url2.hash.length - 1] === "?";
@@ -59808,13 +59808,13 @@ var require_fetch = __commonJS({
             {
               path: hasTrailingQuestionMark ? `${path}?` : path,
               origin: url2.origin,
-              method: request.method,
-              body: agent.isMockActive ? request.body && (request.body.source || request.body.stream) : body2,
+              method: request2.method,
+              body: agent.isMockActive ? request2.body && (request2.body.source || request2.body.stream) : body2,
               // Preserve the serialized fetch body for MockAgent net-connect fallthroughs.
               __mockAgentBodyForDispatch: body2,
-              headers: request.headersList.entries,
+              headers: request2.headersList.entries,
               maxRedirections: 0,
-              upgrade: request.mode === "websocket" ? "websocket" : void 0,
+              upgrade: request2.mode === "websocket" ? "websocket" : void 0,
               ...allowH2 === false ? { allowH2 } : null
             },
             {
@@ -59844,9 +59844,9 @@ var require_fetch = __commonJS({
                 appendHeadersListFromResponseHeaders(headersList, headers, rawHeaders);
                 const location = headersList.get("location", true);
                 this.body = new Readable2({ read: () => controller.resume() });
-                const willFollow = location && request.redirect === "follow" && redirectStatusSet.has(status);
+                const willFollow = location && request2.redirect === "follow" && redirectStatusSet.has(status);
                 const decoders = [];
-                if (request.method !== "HEAD" && request.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
+                if (request2.method !== "HEAD" && request2.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
                   const contentEncoding = headersList.get("content-encoding", true);
                   const codings = contentEncoding ? contentEncoding.toLowerCase().split(",") : [];
                   const maxContentEncodings = 5;
@@ -59919,7 +59919,7 @@ var require_fetch = __commonJS({
                 if (this.abort) {
                   fetchParams.controller.off("terminated", this.abort);
                 }
-                if (request.mode === "websocket" && allowH2 !== false && error61?.code === "UND_ERR_INFO" && error61?.message === "HTTP/2: Extended CONNECT protocol not supported by server") {
+                if (request2.mode === "websocket" && allowH2 !== false && error61?.code === "UND_ERR_INFO" && error61?.message === "HTTP/2: Extended CONNECT protocol not supported by server") {
                   resolve(dispatchWithProtocolPreference(body2, false));
                   return;
                 }
@@ -60015,31 +60015,31 @@ var require_cache3 = __commonJS({
         webidl.util.markAsUncloneable(this);
         this.#relevantRequestResponseList = arguments[1];
       }
-      async match(request, options = {}) {
+      async match(request2, options = {}) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.match";
         webidl.argumentLengthCheck(arguments, 1, prefix);
-        request = webidl.converters.RequestInfo(request);
+        request2 = webidl.converters.RequestInfo(request2);
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
-        const p = this.#internalMatchAll(request, options, 1);
+        const p = this.#internalMatchAll(request2, options, 1);
         if (p.length === 0) {
           return;
         }
         return p[0];
       }
-      async matchAll(request = void 0, options = {}) {
+      async matchAll(request2 = void 0, options = {}) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.matchAll";
-        if (request !== void 0) request = webidl.converters.RequestInfo(request);
+        if (request2 !== void 0) request2 = webidl.converters.RequestInfo(request2);
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
-        return this.#internalMatchAll(request, options);
+        return this.#internalMatchAll(request2, options);
       }
-      async add(request) {
+      async add(request2) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.add";
         webidl.argumentLengthCheck(arguments, 1, prefix);
-        request = webidl.converters.RequestInfo(request);
-        const requests = [request];
+        request2 = webidl.converters.RequestInfo(request2);
+        const requests = [request2];
         const responseArrayPromise = this.addAll(requests);
         return await responseArrayPromise;
       }
@@ -60049,19 +60049,19 @@ var require_cache3 = __commonJS({
         webidl.argumentLengthCheck(arguments, 1, prefix);
         const responsePromises = [];
         const requestList = [];
-        for (let request of requests) {
-          if (request === void 0) {
+        for (let request2 of requests) {
+          if (request2 === void 0) {
             throw webidl.errors.conversionFailed({
               prefix,
               argument: "Argument 1",
               types: ["undefined is not allowed"]
             });
           }
-          request = webidl.converters.RequestInfo(request);
-          if (typeof request === "string") {
+          request2 = webidl.converters.RequestInfo(request2);
+          if (typeof request2 === "string") {
             continue;
           }
-          const r = getRequestState(request);
+          const r = getRequestState(request2);
           if (!urlIsHttpHttpsScheme(r.url) || r.method !== "GET") {
             throw webidl.errors.exception({
               header: prefix,
@@ -60070,8 +60070,8 @@ var require_cache3 = __commonJS({
           }
         }
         const fetchControllers = [];
-        for (const request of requests) {
-          const r = getRequestState(new Request(request));
+        for (const request2 of requests) {
+          const r = getRequestState(new Request(request2));
           if (!urlIsHttpHttpsScheme(r.url)) {
             throw webidl.errors.exception({
               header: prefix,
@@ -60148,17 +60148,17 @@ var require_cache3 = __commonJS({
         });
         return cacheJobPromise.promise;
       }
-      async put(request, response) {
+      async put(request2, response) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.put";
         webidl.argumentLengthCheck(arguments, 2, prefix);
-        request = webidl.converters.RequestInfo(request);
+        request2 = webidl.converters.RequestInfo(request2);
         response = webidl.converters.Response(response, prefix, "response");
         let innerRequest = null;
-        if (webidl.is.Request(request)) {
-          innerRequest = getRequestState(request);
+        if (webidl.is.Request(request2)) {
+          innerRequest = getRequestState(request2);
         } else {
-          innerRequest = getRequestState(new Request(request));
+          innerRequest = getRequestState(new Request(request2));
         }
         if (!urlIsHttpHttpsScheme(innerRequest.url) || innerRequest.method !== "GET") {
           throw webidl.errors.exception({
@@ -60229,21 +60229,21 @@ var require_cache3 = __commonJS({
         });
         return cacheJobPromise.promise;
       }
-      async delete(request, options = {}) {
+      async delete(request2, options = {}) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.delete";
         webidl.argumentLengthCheck(arguments, 1, prefix);
-        request = webidl.converters.RequestInfo(request);
+        request2 = webidl.converters.RequestInfo(request2);
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
         let r = null;
-        if (webidl.is.Request(request)) {
-          r = getRequestState(request);
+        if (webidl.is.Request(request2)) {
+          r = getRequestState(request2);
           if (r.method !== "GET" && !options.ignoreMethod) {
             return false;
           }
         } else {
-          assert2(typeof request === "string");
-          r = getRequestState(new Request(request));
+          assert2(typeof request2 === "string");
+          r = getRequestState(new Request(request2));
         }
         const operations = [];
         const operation = {
@@ -60275,25 +60275,25 @@ var require_cache3 = __commonJS({
        * @param {import('../../../types/cache').CacheQueryOptions} options
        * @returns {Promise<readonly Request[]>}
        */
-      async keys(request = void 0, options = {}) {
+      async keys(request2 = void 0, options = {}) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.keys";
-        if (request !== void 0) request = webidl.converters.RequestInfo(request);
+        if (request2 !== void 0) request2 = webidl.converters.RequestInfo(request2);
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
         let r = null;
-        if (request !== void 0) {
-          if (webidl.is.Request(request)) {
-            r = getRequestState(request);
+        if (request2 !== void 0) {
+          if (webidl.is.Request(request2)) {
+            r = getRequestState(request2);
             if (r.method !== "GET" && !options.ignoreMethod) {
               return [];
             }
-          } else if (typeof request === "string") {
-            r = getRequestState(new Request(request));
+          } else if (typeof request2 === "string") {
+            r = getRequestState(new Request(request2));
           }
         }
         const promise2 = Promise.withResolvers();
         const requests = [];
-        if (request === void 0) {
+        if (request2 === void 0) {
           for (const requestResponse of this.#relevantRequestResponseList) {
             requests.push(requestResponse[0]);
           }
@@ -60305,9 +60305,9 @@ var require_cache3 = __commonJS({
         }
         queueMicrotask(() => {
           const requestList = [];
-          for (const request2 of requests) {
+          for (const request3 of requests) {
             const requestObject = fromInnerRequest(
-              request2,
+              request3,
               void 0,
               new AbortController().signal,
               "immutable"
@@ -60426,9 +60426,9 @@ var require_cache3 = __commonJS({
        * @param {import('../../../types/cache').CacheQueryOptions | undefined} options
        * @returns {boolean}
        */
-      #requestMatchesCachedItem(requestQuery, request, response = null, options) {
+      #requestMatchesCachedItem(requestQuery, request2, response = null, options) {
         const queryURL = new URL(requestQuery.url);
-        const cachedURL = new URL(request.url);
+        const cachedURL = new URL(request2.url);
         if (options?.ignoreSearch) {
           cachedURL.search = "";
           queryURL.search = "";
@@ -60444,7 +60444,7 @@ var require_cache3 = __commonJS({
           if (fieldValue === "*") {
             return false;
           }
-          const requestValue = request.headersList.get(fieldValue);
+          const requestValue = request2.headersList.get(fieldValue);
           const queryValue = requestQuery.headersList.get(fieldValue);
           if (requestValue !== queryValue) {
             return false;
@@ -60452,20 +60452,20 @@ var require_cache3 = __commonJS({
         }
         return true;
       }
-      #internalMatchAll(request, options, maxResponses = Infinity) {
+      #internalMatchAll(request2, options, maxResponses = Infinity) {
         let r = null;
-        if (request !== void 0) {
-          if (webidl.is.Request(request)) {
-            r = getRequestState(request);
+        if (request2 !== void 0) {
+          if (webidl.is.Request(request2)) {
+            r = getRequestState(request2);
             if (r.method !== "GET" && !options.ignoreMethod) {
               return [];
             }
-          } else if (typeof request === "string") {
-            r = getRequestState(new Request(request));
+          } else if (typeof request2 === "string") {
+            r = getRequestState(new Request(request2));
           }
         }
         const responses = [];
-        if (request === void 0) {
+        if (request2 === void 0) {
           for (const requestResponse of this.#relevantRequestResponseList) {
             responses.push(requestResponse[1]);
           }
@@ -60557,21 +60557,21 @@ var require_cachestorage = __commonJS({
         }
         webidl.util.markAsUncloneable(this);
       }
-      async match(request, options = {}) {
+      async match(request2, options = {}) {
         webidl.brandCheck(this, _CacheStorage);
         webidl.argumentLengthCheck(arguments, 1, "CacheStorage.match");
-        request = webidl.converters.RequestInfo(request);
+        request2 = webidl.converters.RequestInfo(request2);
         options = webidl.converters.MultiCacheQueryOptions(options);
         if (options.cacheName != null) {
           if (this.#caches.has(options.cacheName)) {
             const cacheList = this.#caches.get(options.cacheName);
             const cache = new Cache(kConstruct, cacheList);
-            return await cache.match(request, options);
+            return await cache.match(request2, options);
           }
         } else {
           for (const cacheList of this.#caches.values()) {
             const cache = new Cache(kConstruct, cacheList);
-            const response = await cache.match(request, options);
+            const response = await cache.match(request2, options);
             if (response !== void 0) {
               return response;
             }
@@ -61763,7 +61763,7 @@ var require_connection = __commonJS({
     function establishWebSocketConnection(url2, protocols, client, handler, options) {
       const requestURL = url2;
       requestURL.protocol = url2.protocol === "ws:" ? "http:" : "https:";
-      const request = makeRequest({
+      const request2 = makeRequest({
         urlList: [requestURL],
         client,
         serviceWorkers: "none",
@@ -61776,18 +61776,18 @@ var require_connection = __commonJS({
       });
       if (options.headers) {
         const headersList = getHeadersList(new Headers(options.headers));
-        request.headersList = headersList;
+        request2.headersList = headersList;
       }
       const keyValue = crypto.randomBytes(16).toString("base64");
-      request.headersList.append("sec-websocket-key", keyValue, true);
-      request.headersList.append("sec-websocket-version", "13", true);
+      request2.headersList.append("sec-websocket-key", keyValue, true);
+      request2.headersList.append("sec-websocket-version", "13", true);
       for (const protocol of protocols) {
-        request.headersList.append("sec-websocket-protocol", protocol, true);
+        request2.headersList.append("sec-websocket-protocol", protocol, true);
       }
       const permessageDeflate = "permessage-deflate; client_max_window_bits";
-      request.headersList.append("sec-websocket-extensions", permessageDeflate, true);
+      request2.headersList.append("sec-websocket-extensions", permessageDeflate, true);
       const controller = fetching({
-        request,
+        request: request2,
         useParallelQueue: true,
         dispatcher: options.dispatcher,
         processResponse(response) {
@@ -61834,7 +61834,7 @@ var require_connection = __commonJS({
           }
           const secProtocol = response.headersList.get("Sec-WebSocket-Protocol");
           if (secProtocol !== null) {
-            const requestProtocols = getDecodeSplit("sec-websocket-protocol", request.headersList);
+            const requestProtocols = getDecodeSplit("sec-websocket-protocol", request2.headersList);
             if (requestProtocols === null || !requestProtocols.includes(secProtocol)) {
               failWebsocketConnection(handler, 1002, "Protocol was not set in the opening handshake.");
               return;
@@ -63810,12 +63810,12 @@ var require_eventsource = __commonJS({
           corsAttributeState = USE_CREDENTIALS;
           this.#withCredentials = true;
         }
-        const request = createPotentialCORSRequest(urlRecord, "", corsAttributeState);
-        request.client = environmentSettingsObject.settingsObject;
-        request.headersList.set("Accept", "text/event-stream");
-        request.cache = "no-store";
-        request.initiator = "other";
-        this.#request = request;
+        const request2 = createPotentialCORSRequest(urlRecord, "", corsAttributeState);
+        request2.client = environmentSettingsObject.settingsObject;
+        request2.headersList.set("Accept", "text/event-stream");
+        request2.cache = "no-store";
+        request2.initiator = "other";
+        this.#request = request2;
         this.#connect();
       }
       /**
@@ -64719,12 +64719,12 @@ var require_cjs = __commonJS({
 
 // main.ts
 var import_fastify = __toESM(require_fastify(), 1);
-var import_undici2 = __toESM(require_undici(), 1);
+var import_undici3 = __toESM(require_undici(), 1);
 import { readFileSync as readFileSync2 } from "node:fs";
 
 // handlers.ts
-var import_http_status_codes = __toESM(require_cjs(), 1);
-var import_undici = __toESM(require_undici(), 1);
+var import_http_status_codes2 = __toESM(require_cjs(), 1);
+var import_undici2 = __toESM(require_undici(), 1);
 import * as readline from "readline/promises";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
@@ -83595,39 +83595,194 @@ function date4(params) {
   return _coercedDate(ZodDate, params);
 }
 
+// toolbox.ts
+var import_http_status_codes = __toESM(require_cjs(), 1);
+var import_undici = __toESM(require_undici(), 1);
+
+// tools/get_weather.json
+var get_weather_default = {
+  type: "function",
+  function: {
+    name: "get_weather",
+    description: "Get current temperature",
+    parameters: {
+      type: "object",
+      properties: {
+        latitude: {
+          type: "string",
+          description: "latitude of location of interest"
+        },
+        longitude: {
+          type: "string",
+          description: "longitude of location of interest"
+        }
+      },
+      required: [
+        "latitude",
+        "longitude"
+      ]
+    }
+  }
+};
+
+// toolbox.ts
+var RawToolSchema = external_exports.object({
+  type: external_exports.literal("function"),
+  function: external_exports.object({
+    name: external_exports.string(),
+    description: external_exports.string(),
+    parameters: external_exports.object({
+      type: external_exports.string(),
+      properties: external_exports.record(
+        external_exports.string(),
+        external_exports.object({
+          type: external_exports.string(),
+          description: external_exports.string(),
+          enum: external_exports.array(external_exports.string()).optional()
+        })
+      ),
+      required: external_exports.array(external_exports.string()).optional()
+      // parameters MUST be in function-signature order
+    }).optional()
+  })
+});
+async function getWeather(app, argv) {
+  let response;
+  try {
+    response = await (0, import_undici.request)(`https://api.open-meteo.com/v1/forecast?latitude=${argv[0]}&longitude=${argv[1]}&current=temperature_2m&temperature_unit=fahrenheit`, {
+      method: "GET",
+      signal: AbortSignal.timeout(5e3)
+    });
+    if (response.statusCode !== import_http_status_codes.default.OK) {
+      return [void 0, `Open-meteo: ${response.statusCode}: ${response.statusText}`];
+    }
+  } catch (error61) {
+    return [void 0, "Cannot connect to Open Meteo"];
+  }
+  const ometeoResponse = await response.body.json();
+  return [`Weather at latitude ${ometeoResponse.latitude} and longitude ${ometeoResponse.longitude} is ${ometeoResponse.current.temperature_2m}\xBAF`, void 0];
+}
+var Toolbox = class {
+  tools;
+  constructor() {
+    this.tools = /* @__PURE__ */ new Map([
+      ["get_weather", { schema: get_weather_default, function: getWeather }]
+      //["ollama_cli",  { schema: OLLAMACLI_SCHEMA as OpenAIToolSchema, function: ollamaCli  }],
+    ]);
+  }
+  schemas() {
+    return [...this.tools.values()].map((tool) => tool.schema);
+  }
+  async invoke(app, fn) {
+    if (!fn.name) return [void 0, void 0];
+    const tool = this.tools.get(fn.name);
+    if (!tool) return [void 0, void 0];
+    let args;
+    try {
+      args = JSON.parse(fn.arguments ?? "{}");
+    } catch (err) {
+      return [void 0, `bad tool arguments JSON: ${err.message}`];
+    }
+    try {
+      const argv = (tool.schema.function.parameters?.required ?? []).map((label) => {
+        const value = args[label];
+        if (value == null) {
+          throw new Error(`422 UnprocessableEntity: Missing required argument '${label}'`);
+        }
+        return typeof value === "string" ? value : value == null ? "" : String(value);
+      });
+      return tool.function(app, argv);
+    } catch (err) {
+      return [void 0, err.message];
+    }
+  }
+};
+
 // handlers.ts
+var RawFunction = external_exports.object({
+  name: external_exports.string().nullish(),
+  arguments: external_exports.string().nullish()
+  // arguments are streamed as tokens across deltas
+});
+var RawToolCall = external_exports.object({
+  id: external_exports.string(),
+  type: external_exports.literal("function"),
+  function: RawFunction
+});
 var RawMessage = external_exports.object({
   role: external_exports.string(),
-  content: external_exports.string().nullish()
+  content: external_exports.string().nullish(),
+  tool_calls: external_exports.array(RawToolCall).nullish(),
+  tool_call_id: external_exports.string().nullish()
+  // must match result with call 
+}).refine((msg) => !(msg.role === "tool" && !msg.tool_call_id), {
+  message: "tool_call_id is explicitly required when role is 'tool'",
+  path: ["tool_call_id"]
+}).transform((msg) => {
+  if (msg.role === "assistant" && msg.tool_calls && msg.tool_calls.length > 0) {
+    msg.content = void 0;
+  }
+  return msg;
 });
 var RawRequest = external_exports.object({
   appID: external_exports.string(),
   model: external_exports.string(),
   messages: external_exports.array(RawMessage),
-  stream: external_exports.boolean()
+  stream: external_exports.boolean(),
+  turnID: external_exports.number().nullish(),
+  // NULL/0 or must match tool result with turnID of call
+  max_tokens: external_exports.number().optional(),
+  tools: external_exports.array(RawToolSchema).nullish()
 });
-async function top(request, reply) {
-  return reply.code(200).send({
-    message: "UM EECS agentic harnessd"
-  });
-}
-var logOk = (request, runner, model) => {
+var logOk = (request2, runner, model) => {
   console.info(`runner: ${runner}:${model}`);
 };
-var logInfo = (request, runner, model, errcode, msg) => {
-  console.info(`${errcode} |${request.ip} | ${runner}:${model} | ${msg}`);
+var logInfo = (request2, runner, model, errcode, msg) => {
+  console.info(`${errcode} |${request2.ip} | ${runner}:${model} | ${msg}`);
 };
-var logErr = (request, reply, errcode, errmsg) => {
-  console.warn(`${errcode} | ${request.ip} | ${errmsg}`);
+var logErr = (request2, reply, errcode, errmsg) => {
+  console.warn(`${errcode} | ${request2.ip} | ${errmsg}`);
   return reply.status(errcode).send(errmsg);
 };
-var llmprompt = async function(request, reply) {
-  const response = await routePrompt(this, request, reply, request.body);
+var weather = async function(request2, reply) {
+  const body = request2.body;
+  const [result, error61] = await getWeather(this, [body.lat, body.lon]);
+  if (error61) {
+    return reply.code(import_http_status_codes2.default.INTERNAL_SERVER_ERROR).type("text/plain").send(error61);
+  }
+  return reply.type("text/plain").send(result);
+};
+function upsertAgentTools(sql, appID, tools) {
+  if (tools) {
+    const toolSchemas = tools.length > 0 ? JSON.stringify(tools) : null;
+    sql.upsertTools.run(appID, toolSchemas);
+    return tools;
+  }
+  const row = sql.selectTools.get(appID);
+  if (!row || row.schemas === null) return [];
+  try {
+    return JSON.parse(row.schemas);
+  } catch {
+    return [];
+  }
+}
+function assembleToolCall(parallelCalls, delta) {
+  let call = parallelCalls.get(delta.index);
+  if (!call) {
+    call = { id: delta.id || "", type: "function", function: { name: "", arguments: "" } };
+    parallelCalls.set(delta.index, call);
+  }
+  call.id ||= delta.id || "";
+  call.function.name ||= delta.function?.name || "";
+  delta.function?.arguments && (call.function.arguments += delta.function.arguments);
+}
+var llmprompt = async function(request2, reply) {
+  const response = await routePrompt(this, request2, reply, request2.body);
   if (response === null) return;
   return reply.header("Content-Type", "text/event-stream").send(response.body);
 };
-async function routePrompt(app, request, reply, openAIRequest) {
-  const { appID, ...requestBody } = openAIRequest;
+async function routePrompt(app, request2, reply, openAIRequest) {
+  const { appID, turnID, ...requestBody } = openAIRequest;
   const client = app.client;
   const runners = app.runners;
   for (const runner of runners) {
@@ -83644,13 +83799,13 @@ async function routePrompt(app, request, reply, openAIRequest) {
       const response = await client.request({
         origin: fullUrl.origin,
         path: fullUrl.pathname + fullUrl.search,
-        method: request.method,
+        method: request2.method,
         headers,
         body: JSON.stringify(requestBody)
       });
       if (response.statusCode < 200 || response.statusCode >= 300) {
         logInfo(
-          request,
+          request2,
           runner.api.url,
           runner.model,
           response.statusCode,
@@ -83661,59 +83816,65 @@ async function routePrompt(app, request, reply, openAIRequest) {
         }
         continue;
       }
-      logOk(request, runner.api.url, runner.model);
+      logOk(request2, runner.api.url, runner.model);
       return response;
     } catch (error61) {
       logInfo(
-        request,
+        request2,
         runner.api.url,
         runner.model,
-        import_http_status_codes.default.PROCESSING,
+        import_http_status_codes2.default.PROCESSING,
         `Connection error: ${error61.message}. Trying another one.`
       );
       continue;
     }
   }
   return logErr(
-    request,
+    request2,
     reply,
-    import_http_status_codes.default.SERVICE_UNAVAILABLE,
+    import_http_status_codes2.default.SERVICE_UNAVAILABLE,
     "All available LLM providers are rate limited or offline."
   );
 }
-var llmchat = async function(request, reply) {
-  const rawRequest = RawRequest.safeParse(request.body);
+var llmchat = async function(request2, reply) {
+  const rawRequest = RawRequest.safeParse(request2.body);
   if (!rawRequest.success) {
-    return logErr(request, reply, import_http_status_codes.default.BAD_REQUEST, rawRequest.error.message);
+    return logErr(request2, reply, import_http_status_codes2.default.BAD_REQUEST, rawRequest.error.message);
   }
   const openAIRequest = rawRequest.data;
   let turnID = 0;
   try {
     turnID = Number(this.sql.insertTurn.run(openAIRequest.appID, Buffer.from(JSON.stringify(openAIRequest.messages))).lastInsertRowid);
   } catch (err) {
-    return logErr(request, reply, import_http_status_codes.default.INTERNAL_SERVER_ERROR, err.message);
+    return logErr(request2, reply, import_http_status_codes2.default.INTERNAL_SERVER_ERROR, err.message);
   }
   try {
     openAIRequest.messages = retrieveHistory(this.sql, openAIRequest.appID);
   } catch (err) {
-    return logErr(request, reply, import_http_status_codes.default.INTERNAL_SERVER_ERROR, err.message);
+    return logErr(request2, reply, import_http_status_codes2.default.INTERNAL_SERVER_ERROR, err.message);
   }
   reply.hijack();
   reply.raw.setHeader("Content-Type", "text/event-stream");
-  const response = await routePrompt(this, request, reply, openAIRequest);
+  const response = await routePrompt(this, request2, reply, openAIRequest);
   if (response === null) {
     return;
   }
   try {
-    const acc = { completion: "", reasoning: "" };
+    const acc = { completion: "", reasoning: "", parallelCalls: /* @__PURE__ */ new Map() };
     await pipeline(
       // pipeline() will take care of all of the above.
       Readable.from(yieldSse(response, acc)),
       reply.raw
     );
+    this.sql.updateTurn.run(
+      acc.completion,
+      acc.reasoning,
+      acc.reasoning,
+      turnID
+    );
   } catch (err) {
     if (err.code !== "ERR_STREAM_PREMATURE_CLOSE" && !reply.raw.writableEnded) {
-      logErr(request, reply, err.code, `Pipeline Error: ${err.message}`);
+      logErr(request2, reply, err.code, `Pipeline Error: ${err.message}`);
       console.error(`Pipeline Error: ${err.message}`);
       reply.raw.destroy(err);
     }
@@ -83722,9 +83883,25 @@ var llmchat = async function(request, reply) {
 };
 function retrieveHistory(sql, appID) {
   const turns = sql.selectTurns.all(appID);
+  const calls = sql.selectCalls.all(appID);
+  let calls_end_idx = 0;
   const history = [];
   for (const turn of turns) {
     if (turn.prompt) history.push(...external_exports.array(RawMessage).parse(JSON.parse(turn.prompt)));
+    const calls_start_idx = calls_end_idx;
+    while (calls_end_idx < calls.length && calls[calls_end_idx]?.turnID === turn.turnID) calls_end_idx++;
+    if (calls_end_idx > calls_start_idx) {
+      const turnCalls = calls.slice(calls_start_idx, calls_end_idx);
+      const toolCalls = turnCalls.map((call) => ({ id: call.id, type: "function", function: { name: call.name, arguments: call.arguments } }));
+      history.push({ role: "assistant", content: turn.reasoning || void 0, tool_calls: toolCalls });
+      for (const call of turnCalls) {
+        if (call.result != null) history.push({
+          role: "tool",
+          content: call.result,
+          tool_call_id: call.id
+        });
+      }
+    }
     if (turn.completion) {
       const content = turn.reasoning ? turn.reasoning + "\n\n" + turn.completion : turn.completion;
       history.push({ role: "assistant", content });
@@ -83765,9 +83942,11 @@ async function* yieldSse(response, acc) {
             } else if (delta?.reasoning) {
               acc.reasoning += delta.reasoning;
             }
+            if (delta?.tool_calls) {
+              for (const toolCall of delta.tool_calls) assembleToolCall(acc.parallelCalls, toolCall);
+            }
             yield `data: ${tagline}
-
-`;
+n`;
           } catch (err) {
             yield `event: error
 data: ${JSON.stringify(err.message)}
@@ -83788,6 +83967,126 @@ data: ${tagline}
     reader.close();
   }
 }
+var llmtools = async function(request2, reply) {
+  const rawRequest = RawRequest.safeParse(request2.body);
+  if (!rawRequest.success) {
+    return logErr(request2, reply, import_http_status_codes2.default.BAD_REQUEST, rawRequest.error.message);
+  }
+  const openAIRequest = rawRequest.data;
+  let turnID = 0;
+  try {
+    if (openAIRequest.turnID != null && openAIRequest.turnID > 0) {
+      turnID = openAIRequest.turnID;
+      for (const msg of openAIRequest.messages) {
+        if (msg.role === "tool") {
+          this.sql.updateCall.run(msg.content ?? null, msg.tool_call_id);
+        }
+      }
+    } else {
+      turnID = Number(this.sql.insertTurn.run(openAIRequest.appID, JSON.stringify(openAIRequest.messages)).lastInsertRowid);
+    }
+  } catch (err) {
+    return logErr(request2, reply, import_http_status_codes2.default.INTERNAL_SERVER_ERROR, err.message);
+  }
+  let agentTools;
+  agentTools = upsertAgentTools(this.sql, openAIRequest.appID, openAIRequest.tools);
+  openAIRequest.messages = retrieveHistory(this.sql, openAIRequest.appID);
+  openAIRequest.tools = [...this.toolbox.schemas(), ...agentTools];
+  reply.hijack();
+  reply.raw.setHeader("Content-Type", "text/event-stream");
+  const app = this;
+  async function* conveyCompletion() {
+    let sendNewPrompt = true;
+    const acc = { completion: "", reasoning: "", parallelCalls: /* @__PURE__ */ new Map() };
+    while (sendNewPrompt) {
+      sendNewPrompt = false;
+      const response = await routePrompt(app, request2, reply, openAIRequest);
+      if (response === null) return;
+      yield* yieldSse(response, acc);
+      if (acc.parallelCalls.size > 0) {
+        try {
+          for (const [idx, call] of acc.parallelCalls) {
+            app.sql.insertCall.run(turnID, call.id, idx, call.function.name, call.function.arguments);
+          }
+          const reasoning = !acc.completion ? acc.reasoning : !acc.reasoning ? acc.completion : acc.completion + acc.reasoning;
+          if (reasoning) app.sql.updateReasoning.run(acc.reasoning, turnID);
+        } catch (err) {
+          yield `event: error
+data: ${JSON.stringify(err.message)}
+
+`;
+          return;
+        }
+        sendNewPrompt = true;
+        const toolCalls = [...acc.parallelCalls.values()];
+        const assistantMsg = { role: "assistant", content: acc.reasoning || void 0, tool_calls: toolCalls };
+        openAIRequest.messages.push(assistantMsg);
+        const agentToolCalls = [];
+        for (const call of acc.parallelCalls.values()) {
+          const [toolResult, toolErr] = await app.toolbox.invoke(app, call.function);
+          if (toolResult === void 0 && toolErr === void 0) {
+            agentToolCalls.push({
+              id: call.id,
+              type: "function",
+              function: {
+                name: call.function.name,
+                arguments: call.function.arguments
+              }
+            });
+            sendNewPrompt = false;
+            continue;
+          }
+          const result = toolErr ?? toolResult ?? void 0;
+          if (!result) {
+            yield `event: error
+data: ${JSON.stringify(`${call.function.name}: invalid toolResult: cannot be null or an empty string.`)}
+
+`;
+            return;
+          }
+          try {
+            app.sql.updateCall.run(result, call.id);
+          } catch (err) {
+            yield `event: error
+data: ${JSON.stringify(err.message)}
+
+`;
+            return;
+          }
+          if (sendNewPrompt) {
+            openAIRequest.messages.push({ role: "tool", content: result, tool_call_id: call.id });
+          }
+        }
+        if (!sendNewPrompt) {
+          yield `event: tool_calls
+data: ${JSON.stringify({ turnID, calls: agentToolCalls })}
+
+`;
+        }
+        acc.reasoning = "";
+        acc.completion = "";
+        acc.parallelCalls.clear();
+      } else {
+        if (acc.completion || acc.reasoning) try {
+          app.sql.updateTurn.run(acc.completion, acc.reasoning, acc.reasoning, turnID);
+        } catch (err) {
+          yield `event: error
+data: ${JSON.stringify(err.message)}
+
+`;
+        }
+      }
+    }
+  }
+  try {
+    await pipeline(Readable.from(conveyCompletion()), reply.raw);
+  } catch (err) {
+    if (err.code !== "ERR_STREAM_PREMATURE_CLOSE" && !reply.raw.writableEnded) {
+      request2.log.error(`llmTools Pipeline Error: ${err.message}`);
+      reply.raw.destroy(err);
+    }
+  }
+};
 
 // runners.ts
 import * as fs from "fs";
@@ -84542,6 +84841,7 @@ function initDB() {
         PRAGMA journal_size_limit = 104857600; -- 100 MB
         PRAGMA temp_store = MEMORY;
         PRAGMA wal_autocheckpoint = 0;
+	PRAGMA foreign_keys = ON;
     `);
   waldb.exec(`
         PRAGMA busy_timeout = 5000; -- 5 secs
@@ -84559,6 +84859,28 @@ function initDB() {
     ),
     selectTurns: rwdb.prepare(
       `SELECT turnID, CAST(prompt AS TEXT) AS prompt, reasoning, completion FROM turns WHERE appID = ? ORDER BY turnID ASC`
+    ),
+    selectTools: rwdb.prepare(`SELECT schemas FROM tools WHERE appID = ?`),
+    upsertTools: rwdb.prepare(
+      `INSERT INTO tools (appID, schemas)
+            VALUES (?, ?)
+            ON CONFLICT (appID) DO UPDATE SET
+                schemas = excluded.schemas,
+                timestamp = unixepoch()`
+    ),
+    insertCall: rwdb.prepare(
+      `INSERT INTO calls (turnID, id, idx, name, arguments) VALUES (?, ?, ?, ?, ?)`
+    ),
+    selectCalls: rwdb.prepare(
+      `SELECT turnID, id, name, arguments, result FROM calls
+             WHERE turnID IN (SELECT turnID FROM turns WHERE appID = ?)
+             ORDER BY turnID ASC, idx ASC`
+    ),
+    updateCall: rwdb.prepare(
+      `UPDATE calls SET result = ? WHERE id = ?`
+    ),
+    updateReasoning: rwdb.prepare(
+      `UPDATE turns SET reasoning = COALESCE(reasoning || ' ', '') || ? WHERE turnID = ?`
     )
   };
   return { rwdb, waldb, sqlStatements };
@@ -84580,7 +84902,7 @@ function waloop(waldb) {
 try {
   const { rwdb, waldb, sqlStatements } = initDB();
   onShutdown(rwdb, waldb);
-  const client = new import_undici2.Agent({
+  const client = new import_undici3.Agent({
     connect: { timeout: 5e3 },
     // dead destination
     headersTimeout: 1e4,
@@ -84604,7 +84926,7 @@ try {
     // accept proxy-reported client IP (X-Forwarded-For)
     logger: { level: "error" }
     // log only if server crashes
-  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmchat", llmchat).post("/", top);
+  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).decorate("toolbox", new Toolbox()).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmchat", llmchat).post("/llmtools/", llmtools).post("/weather/", weather);
   app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {
     if (err) {
       console.error(err);
@@ -84618,13 +84940,13 @@ try {
   process.exit(1);
 }
 function logRequest() {
-  this.addHook("onRequest", (request, reply, done) => {
-    request.clientIP = request.ip || request.raw.socket.remoteAddress || "127.0.0.1";
+  this.addHook("onRequest", (request2, reply, done) => {
+    request2.clientIP = request2.ip || request2.raw.socket.remoteAddress || "127.0.0.1";
     done();
-  }).addHook("onResponse", (request, reply, done) => {
+  }).addHook("onResponse", (request2, reply, done) => {
     const time3 = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").substring(0, 19);
     console.log(
-      `${time3} [Fastify] | ${reply.statusCode} | ${request.clientIP} | ${request.method} ${request.url} HTTP/${request.raw.httpVersion}`
+      `${time3} [Fastify] | ${reply.statusCode} | ${request2.clientIP} | ${request2.method} ${request2.url} HTTP/${request2.raw.httpVersion}`
     );
     done();
   });

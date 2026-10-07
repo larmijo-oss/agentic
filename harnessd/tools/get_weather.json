@@ -1,0 +1,24 @@
+{
+  "type": "function",
+  "function": {
+    "name": "get_weather",
+    "description": "Get current temperature",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "string",
+          "description": "latitude of location of interest"
+        },
+        "longitude": {
+          "type": "string",
+          "description": "longitude of location of interest"
+        }
+      },
+      "required": [
+        "latitude",
+        "longitude"
+      ]
+    }
+  }
+}
