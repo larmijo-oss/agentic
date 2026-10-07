@@ -38,6 +38,10 @@ final class AppViewModel {
 struct AgentApp: App {
     let vm = AppViewModel()
     
+    init() {
+            LocManager.shared.startUpdates()
+        }
+    
     var body: some Scene {
         WindowGroup {
             NavigationStack {

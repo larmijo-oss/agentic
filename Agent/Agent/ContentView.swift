@@ -31,7 +31,7 @@ struct SubmitButton: View {
             vm.conversation.append(completion)
             
             Task (priority: .background){
-                await vm.rein.llmPrompt(messages, completion: completion, errMsg: Bindable(vm).errMsg)
+                await vm.rein.llmTools(messages, completion: completion, errMsg: Bindable(vm).errMsg)
                 // cleanup
                                 vm.message = ""
                                 isSending = false
@@ -83,7 +83,7 @@ struct ContentView: View {
                     messageInFocus.toggle()
                 }
               
-        .navigationTitle("llmPrompt")
+        .navigationTitle("llmTools")
         .navigationBarTitleDisplayMode(.inline)
         .alert("LLM Error", isPresented: Bindable(vm).showError) {
                         Button("OK") {

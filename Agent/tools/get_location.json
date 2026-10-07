@@ -1,0 +1,11 @@
+{
+    "type": "function",
+    "function": {
+      "name": "get_location",
+      "description": "Get current location",
+      "parameters": {
+          "type": "object",
+          "properties": {}
+      }
+    }
+}
