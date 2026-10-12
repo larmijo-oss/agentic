@@ -83946,7 +83946,8 @@ async function* yieldSse(response, acc) {
               for (const toolCall of delta.tool_calls) assembleToolCall(acc.parallelCalls, toolCall);
             }
             yield `data: ${tagline}
-n`;
+
+`;
           } catch (err) {
             yield `event: error
 data: ${JSON.stringify(err.message)}
