@@ -164,7 +164,7 @@ struct Rein {
             return ""
         }
     
-    func llmPrompt(_ messages: [Message], completion: Chat, errMsg: Binding<String>) async {
+    func llmPrompt(_ messages: [Message], completion: Chat, errMsg: Binding<String>, conversationID: String) async {
             
             guard let harnessApi = URL(string: "\(harness)\(chatApi)") else {
                 errMsg.wrappedValue = "Bad harness URL \(harness)\(chatApi)"
@@ -175,7 +175,7 @@ struct Rein {
             let openAIRequest = OpenAIRequest(
                 model: model,
                 messages: messages,
-                appID: appID
+                appID: conversationID
             )
             let request = Result { try prepareRequest(harnessApi, openAIRequest) }
             guard case .success(let request) = request else {

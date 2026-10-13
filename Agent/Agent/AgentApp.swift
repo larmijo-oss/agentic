@@ -33,7 +33,9 @@ final class AppViewModel {
 
     var systemPrompt = ""
     var userPrompt = ""
-
+    
+    var useSystemPrompt = false;
+    
     let systemInstruction = "System prompt…"
     let userInstruction = "Type your guess…"
 
@@ -46,6 +48,21 @@ final class AppViewModel {
 
     var isStreaming = false
     var hasStartedGame = false
+    
+    // Save each game's conversation separately
+    var gameConversations: [Game: [Chat]] = [
+        .city: [],
+        .landmark: []
+    ]
+
+    // Track which games have already started
+    var startedGames: Set<Game> = []
+
+    // Separate backend conversation IDs
+    var gameIDs: [Game: String] = [
+        .city: UUID().uuidString,
+        .landmark: UUID().uuidString
+    ]
 
 
     private var gameInitializationPrompt: String {
@@ -100,11 +117,8 @@ final class AppViewModel {
 
 
     var sendDisabled: Bool {
-        let system =
-            systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let user =
-            userPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let system = systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let user = userPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return isStreaming || (system.isEmpty && user.isEmpty)
     }
@@ -133,15 +147,21 @@ final class AppViewModel {
         await rein.llmPrompt(
             [initialization],
             completion: completion,
-            errMsg: Bindable(self).errMsg
+            errMsg: Bindable(self).errMsg,
+            conversationID: gameIDs[selectedGame]!
         )
 
         isStreaming = false
         hasStartedGame = true
+        
+        startedGames.insert(selectedGame)
+        gameConversations[selectedGame] = conversation
+        
         showError = !errMsg.isEmpty
     }
 
 
+    
     func send() async {
         guard !isStreaming else {
             return
@@ -159,6 +179,7 @@ final class AppViewModel {
 
         var messages: [Message] = []
 
+
         if !trimmedSystem.isEmpty {
             messages.append(
                 Message(
@@ -174,6 +195,7 @@ final class AppViewModel {
                 )
             )
         }
+
 
         if !trimmedUser.isEmpty {
             messages.append(
@@ -191,6 +213,7 @@ final class AppViewModel {
             )
         }
 
+
         systemPrompt = ""
         userPrompt = ""
 
@@ -203,16 +226,23 @@ final class AppViewModel {
         conversation.append(completion)
 
         isStreaming = true
+        errMsg = ""
 
         await rein.llmPrompt(
             messages,
             completion: completion,
-            errMsg: Bindable(self).errMsg
+            errMsg: Bindable(self).errMsg,
+            conversationID: gameIDs[selectedGame]!
         )
 
         isStreaming = false
+
+ 
+        gameConversations[selectedGame] = conversation
+
         showError = !errMsg.isEmpty
     }
+
 
 
     func clear() async {
@@ -220,20 +250,18 @@ final class AppViewModel {
             return
         }
 
-        let success = await rein.llmClear(
-            errMsg: Bindable(self).errMsg
-        )
+        gameIDs[selectedGame] = UUID().uuidString
 
-        if success {
-            conversation.removeAll()
-            systemPrompt = ""
-            userPrompt = ""
-            hasStartedGame = false
+        conversation.removeAll()
+        gameConversations[selectedGame] = []
 
-            await startGame()
-        }
+        systemPrompt = ""
+        userPrompt = ""
+        hasStartedGame = false
 
-        showError = !errMsg.isEmpty
+        startedGames.remove(selectedGame)
+
+        await startGame()
     }
 
 
@@ -246,23 +274,18 @@ final class AppViewModel {
             return
         }
 
-        let success = await rein.llmClear(
-            errMsg: Bindable(self).errMsg
-        )
+        gameConversations[selectedGame] = conversation
+        selectedGame = newGame
+        conversation = gameConversations[newGame] ?? []
 
-        guard success else {
-            showError = !errMsg.isEmpty
-            return
-        }
-
-        conversation.removeAll()
         systemPrompt = ""
         userPrompt = ""
 
-        selectedGame = newGame
-        hasStartedGame = false
-
-        await startGame()
+        hasStartedGame = startedGames.contains(newGame)
+        
+        if !hasStartedGame {
+            await startGame()
+        }
     }
 }
 
