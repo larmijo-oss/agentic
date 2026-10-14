@@ -28,6 +28,11 @@ final class AppViewModel {
     let instruction = "Type a message…"
 
     var errMsg = ""
+    var showOk = false
+        
+        var getSignedin: Bool = false
+        @ObservationIgnored var signinCompletion: (() async -> Void)?
+        
     var showError = false
     
     var conversation: [Chat] = []
@@ -40,6 +45,10 @@ struct AgentApp: App {
     
     init() {
             LocManager.shared.startUpdates()
+            Ticket.shared.vm = vm
+                Task { [vm] in
+                    await Ticket.shared.open(errMsg: Bindable(vm).errMsg, showOk: Bindable(vm).showOk)
+                }
         }
     
     var body: some Scene {

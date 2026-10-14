@@ -26,6 +26,37 @@ func getLocation(_ argv: [String]) async -> String {
     "latitude: \(LocManagerViewModel.shared.location.lat), longitude: \(LocManagerViewModel.shared.location.lon)"
 }
 
+func getLocAuth(_ argv: [String]) async -> String {     //"Ann Arbor"
+    Ticket.shared.ticket == argv[0]
+    ? "latitude: \(LocManagerViewModel.shared.location.lat), longitude: \(LocManagerViewModel.shared.location.lon)"
+    : "401 Unauthorized. Ask the user if they want to try again. If so, you **MUST** call the get_auth tool again to get a fresh new ticket and retry the operation. DO NOT reuse any ticket in context/history that came before this message."
+}
+
+func getAuth(_ argv: [String]) async -> String {
+    repeat {
+        if let ticket = Ticket.shared.ticket {
+            return "Authorization ticket is: \(ticket)"
+        }
+        
+        // trigger Google Sign-in
+        
+        if let vm = Ticket.shared.vm {
+                    await withUnsafeContinuation { getAuthAt in
+                        vm.signinCompletion = { () -> Void in
+                            getAuthAt.resume()
+                        }
+                        vm.getSignedin = true
+                    }
+                    // here be getAuthAt
+                }
+        
+        if Ticket.shared.ticket == nil { // failed to sign in, or vm is nil
+                                         // or is currently signing in?
+            return "401 Unauthorized. Complete the prompt by informing user that task cannot be completed due to failed authorization."
+        }
+    } while true
+}
+
 struct OpenAIToolSchema: Codable {
     let type: String = "function"
     let function: OpenAISchemaFunction
@@ -67,7 +98,8 @@ struct Toolbox {
 
     init() {
         self.tools = [
-            "get_location": Tool(schema: jsonToSchema("get_location"), function: getLocation),
+            "get_auth": Tool(schema: jsonToSchema("get_auth"), function: getAuth),
+            "get_loc_auth": Tool(schema: jsonToSchema("get_loc_auth"), function: getLocAuth),
         ]
     }
 

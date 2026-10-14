@@ -85,13 +85,25 @@ struct ContentView: View {
               
         .navigationTitle("llmTools")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("LLM Error", isPresented: Bindable(vm).showError) {
+        .alert(vm.showError ? "LLM Error" : "Advisory", isPresented: Binding<Bool>(
+                        get: { vm.showError || vm.showOk },
+                        set: { _ in
+                            vm.showError = false
+                            vm.showOk = false
+                        }
+                    )) {
                         Button("OK") {
                             vm.errMsg = ""
                         }
                     } message: {
                         Text(vm.errMsg)
                     }
+        .sheet(isPresented: Bindable(vm).getSignedin) {
+                                    SigninView(isPresenting: Bindable(vm).getSignedin)
+                                        .presentationDetents([.fraction(0.25)])
+                                        .presentationDragIndicator(.hidden)
+                                        .interactiveDismissDisabled()
+                                }
 
     }
 }

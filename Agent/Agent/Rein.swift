@@ -335,6 +335,54 @@ struct Rein {
                 }
             }
         }
+    
+    func addAgent(_ idToken: String?, errMsg: Binding<String>) async -> String? {
+            guard let idToken else {
+                return nil
+            }
+            
+            guard let harnessApi = URL(string: "\(harness)/addagent") else {
+                errMsg.wrappedValue = "addAgent: Bad URL"
+                return nil
+            }
+            let agentAuth = [
+                "clientID": "1075248000911-oddn3ps3ha43ki2gl0judbqjc4aqk6q1.apps.googleusercontent.com",   // replace with your client ID, keep the double quotation marks
+                "idToken" : idToken
+            ]
+            guard let requestBody = try? JSONSerialization.data(withJSONObject: agentAuth) else {
+                errMsg.wrappedValue = "addAgent: JSONSerialization error"
+                return nil
+            }
+            
+            var request = URLRequest(url: harnessApi)
+            request.httpMethod = "POST"
+            request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+            request.httpBody = requestBody
+            
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                    errMsg.wrappedValue = "addAgent: \(http.statusCode)\n\(harnessApi)\n\(HTTPURLResponse.localizedString(forStatusCode: http.statusCode))"
+                    return nil
+                }
+
+                // obtain ticket and creator from harnessd
+                guard let ticketObj = try? JSONSerialization.jsonObject(with: data) as? [String:Any] else {
+                                errMsg.wrappedValue = "addAgent: JSON deserialization"
+                                return nil
+                            }
+                            Ticket.shared.ticket = ticketObj["ticket"] as? String
+                            Ticket.shared.creator = ticketObj["creator"] as? String ?? ""
+                            Ticket.shared.expiration = Date()+(ticketObj["lifetime"] as! TimeInterval)-1 // ticket must be valid for at least 1 sec.
+                            
+                            return Ticket.shared.ticket
+
+            } catch {
+                errMsg.wrappedValue = "addAgent: POSTing failed \(error)"
+                return nil
+            }
+        }
 
 }
 
