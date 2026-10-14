@@ -1,0 +1,11 @@
+{
+  "type": "function",
+  "function": {
+      "name": "get_auth",
+      "description": "Get authorization ticket",
+      "parameters": {
+          "type": "object",
+          "properties": {}
+      }
+  }
+}

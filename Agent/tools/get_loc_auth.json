@@ -1,0 +1,17 @@
+{
+  "type": "function",
+  "function": {
+      "name": "get_loc_auth",
+      "description": "Get current location, requiring authorization ticket",
+      "parameters": {
+          "type": "object",
+          "properties": {
+              "ticket": {
+                  "type": "string",
+                  "description": "Authorization ticket obtained from get_auth tool"
+              }
+          },
+          "required": [ "ticket" ]
+      }
+  }
+}
