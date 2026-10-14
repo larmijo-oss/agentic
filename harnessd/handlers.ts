@@ -6,6 +6,7 @@ import { pipeline } from 'stream/promises'
 import { z as zod } from 'zod'
 import type { FastifyHttp2Instance, FastifyHttp2Reply, FastifyHttp2Request, Http2RouteHandler } from './main.js'
 import { getWeather, type OpenAIToolSchema, RawToolSchema } from './toolbox.js'
+import { randomBytes } from 'crypto'
 
 const RawFunction = zod.object({
     name: zod.string().nullish(),
@@ -601,3 +602,61 @@ export const llmtools: Http2RouteHandler = async function (request, reply) {
         }
     }
 }
+
+type AgentAuth = {
+    clientID: string
+    idToken: string
+}
+
+export const addagent: Http2RouteHandler = async function (request, reply) {
+    const agentAuth = request.body as AgentAuth;
+
+    let idInfo
+    try {
+        // automatically uses cached JWKS
+        idInfo = (await this.googleJWKS.verifyIdToken({
+            idToken: agentAuth.idToken,     // validate user's idToken
+            audience: agentAuth.clientID,   // validate Google client the idToken was issued to
+        })).getPayload()
+    } catch (error) {
+        return logErr(request, reply, HttpStatus.UNAUTHORIZED, `Unauthorized: ${error}`)
+    }
+
+    if (!idInfo) {
+        return logErr(request, reply, HttpStatus.UNAUTHORIZED, "Invalid token payload")
+    }
+
+    // create ticket
+    const creator = idInfo.name ?? "Profile NA"
+    const ticket = randomBytes(32).toString('hex')
+
+    const now = Math.floor(Date.now() / 1000)
+    const lifetime = Math.min((idInfo.exp - now) + 1, 180) // secs, up to max of 1800, idToken lifetime
+
+	// insert ticket to database
+    try {
+        // clean up tickets table at most once every 5 minutes
+        const row = this.sql.countExpiredTickets.get(now) as Record<string, number> | undefined
+        const expired = (row ? Object.values(row)[0] : 0) ?? 0
+
+        if (expired > 10) {
+            // if 10 or more entries have been stale for > 5 mins, run the greedy DELETE
+            this.sql.deleteExpiredTickets.run(now)
+        }
+
+	    // insert ticket to database
+        this.sql.insertTicket.run(ticket, creator, now + lifetime)
+
+	    // return ticket, creator, lifetime
+        return reply.send({
+            ticket: ticket,
+            creator: creator,
+            lifetime: lifetime
+        })
+    } catch (error: any) {
+        return logErr(request, reply, HttpStatus.INTERNAL_SERVER_ERROR, error.message)
+    }
+
+}
+
+

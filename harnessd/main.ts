@@ -11,7 +11,7 @@ import { llmprompt, top } from "./handlers.js";
 import Database from 'better-sqlite3' 
 import type BetterSqlite3 from 'better-sqlite3'
 import { Toolbox } from './toolbox.js'
-
+import { OAuth2Client } from 'google-auth-library'
 
 declare module 'fastify' {
     interface FastifyInstance {
@@ -19,6 +19,7 @@ declare module 'fastify' {
         logRequest: () => this        
         runners: LlmRunners
 	 toolbox: Toolbox
+	 googleJWKS: OAuth2Client
 	sql: ReturnType<typeof initDB>['sqlStatements']
     }
     interface FastifyRequest {
@@ -108,6 +109,18 @@ function initDB() {
         updateReasoning: rwdb.prepare(
             `UPDATE turns SET reasoning = COALESCE(reasoning || ' ', '') || ? WHERE turnID = ?`
         ),
+	countExpiredTickets: rwdb.prepare(
+            `SELECT COUNT(*) FROM tickets WHERE ? > (expiration + 300)`
+        ),
+        deleteExpiredTickets: rwdb.prepare(
+            `DELETE FROM tickets WHERE ? > expiration`
+        ),
+        insertTicket: rwdb.prepare(
+            `INSERT INTO tickets (ticket, creator, expiration) VALUES (?, ?, ?)`
+        ),
+        selectTicket: rwdb.prepare(
+            `SELECT expiration FROM tickets WHERE ticket = ?`
+        ),
 
     }
 
@@ -172,12 +185,14 @@ const { rwdb, waldb, sqlStatements } = initDB()
         .decorate('client', client)
         .decorate('runners', new LlmRunners())
         .decorate('toolbox', new Toolbox())
+	.decorate('googleJWKS', new OAuth2Client())
         .decorate('sql', sqlStatements)
         // Routes follow
         .post("/llmprompt", handlers.llmprompt)
 	.post("/llmchat", handlers.llmchat)
 	.post('/llmtools/', handlers.llmtools) 
 	.post('/weather/', handlers.weather)
+	.post('/addagent/', handlers.addagent)
        
 
 	app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {

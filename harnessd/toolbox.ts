@@ -6,6 +6,7 @@ import type { FastifyHttp2Instance } from './main.js'
 import { type OpenAIFunction } from './handlers.js'
 
 import WEATHER_SCHEMA from './tools/get_weather.json' with { type: 'json' }
+import WEATHER_AUTH_SCHEMA from './tools/get_weather_auth.json' with { type: 'json' }
 
 export const RawToolSchema = zod.object({
     type: zod.literal("function"),
@@ -67,7 +68,7 @@ export class Toolbox {
 
     constructor() {
         this.tools = new Map<string, Tool>([
-            ["get_weather", { schema: WEATHER_SCHEMA as OpenAIToolSchema, function: getWeather }],
+            [ "get_weather_auth", { schema: WEATHER_AUTH_SCHEMA as OpenAIToolSchema, function: getWeatherAuth } ],
             //["ollama_cli",  { schema: OLLAMACLI_SCHEMA as OpenAIToolSchema, function: ollamaCli  }],
         ])
     }
@@ -105,6 +106,26 @@ export class Toolbox {
         }        
     }
     
+}
+
+export async function getWeatherAuth(app: FastifyHttp2Instance, argv: string[]): Promise<[string?, string?]> {
+    const [ticket, ...args] = argv
+    if (!ticket) return [undefined, "No authorization ticket"]
+    const err = checkAuth(app.sql, ticket)
+    if (err instanceof Error) return [undefined, err.message]
+
+    return getWeather(app, args)
+}
+
+function checkAuth(sql: FastifyHttp2Instance['sql'], ticket: string): Error | null {
+    try {
+        const row = sql.selectTicket.get(ticket) as [number] | undefined
+        return !row || Math.floor(Date.now() / 1000) > row[0]
+            ? Error("401 Unauthorized: The ticket is invalid or expired. Ask the user if they want to try again. If so, you **MUST** call the get_auth tool again to get a fresh new ticket and retry the operation. DO NOT reuse any ticket in context/history that came before this message.")
+            : null
+    } catch (error) {
+        return error as Error
+    }
 }
 
 

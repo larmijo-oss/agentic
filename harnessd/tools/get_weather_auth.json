@@ -1,0 +1,29 @@
+{
+    "type": "function",
+    "function": {
+        "name": "get_weather_auth",
+        "description": "Get current temperature, requiring authorization ticket",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "ticket": {
+                    "type": "string",
+                    "description": "Authorization ticket obtained from get_auth tool"
+                },
+                "latitude": {
+                    "type": "string",
+                    "description": "latitude of location of interest"
+                },
+                "longitude": {
+                    "type": "string",
+                    "description": "longitude of location of interest"
+                }
+            },
+            "required": [
+                "ticket",
+                "latitude",
+                "longitude"
+            ]
+        }
+    }
+}
