@@ -313,8 +313,20 @@ struct Rein {
                                         // resolve each non-resident tool call locally
                                         var toolResults = [Message]()
                                         for call in acc.parallelCalls {
-                                            let result = await toolbox.invoke(function: call.function) ??
-                                            "Tool '\(call.function.name ?? "unknown")' does not exist. Complete the prompt without the tool."
+                                            let cacheKey = "\(turnID):\(call.id)"
+                                            let result: String
+
+                                            if let cached = Ticket.shared.vm?.toolOutcomes[cacheKey] {
+                                                result = cached
+                                            } else {
+                                                result = await toolbox.invoke(
+                                                    function: call.function
+                                                ) ??
+                                                "Tool '\(call.function.name ?? "unknown")' does not exist. Complete the prompt without the tool."
+
+                                                Ticket.shared.vm?.toolOutcomes[cacheKey] = result
+                                            }
+
                                             
                                             toolResults.append(Message(
                                                 role: "tool",
@@ -335,6 +347,46 @@ struct Rein {
                 }
             }
         }
+    
+    
+    func llmClear() async throws {
+        guard let url = URL(string: "\(harness)/llmclear/"),
+              let id = appID else {
+            throw Exception(
+                errorDescription: "Missing app ID or Clear URL"
+            )
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+
+        request.setValue(
+            "application/json",
+            forHTTPHeaderField: "Content-Type"
+        )
+
+        request.httpBody = try JSONSerialization.data(
+            withJSONObject: ["appID": id]
+        )
+
+        let (data, response) = try await URLSession.shared.data(
+            for: request
+        )
+
+        guard let http = response as? HTTPURLResponse,
+              http.statusCode == 200,
+              let json = try JSONSerialization.jsonObject(
+                with: data
+              ) as? [String: Any],
+              json["ok"] as? Bool == true,
+              json["cleared"] as? Bool == true else {
+            throw Exception(
+                errorDescription: "Server did not confirm database Clear"
+            )
+        }
+    }
+
     
     func addAgent(_ idToken: String?, errMsg: Binding<String>) async -> String? {
             guard let idToken else {

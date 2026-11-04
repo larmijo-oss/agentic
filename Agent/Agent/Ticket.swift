@@ -48,7 +48,11 @@ final class Ticket {
 
                 // if simulator
                 #if targetEnvironment(simulator)
-                    guard let _ = try? await auth.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "to allow simulator to access KeyChain") else { errMsg.wrappedValue = "Open Keychain failed"; return }
+                    guard let _ = try? await
+                        authContext.evaluatePolicy(
+                        .deviceOwnerAuthentication,
+                        localizedReason: "to allow simulator to access KeyChain"
+                        ) else { errMsg.wrappedValue = "Open Keychain failed"; return }
                 #endif
                 
                 // search for ticket
@@ -114,7 +118,10 @@ final class Ticket {
             
             // if simulator
             #if targetEnvironment(simulator)
-                guard let _ = try? await auth.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "to allow simulator to access KeyChain") else { errMsg.wrappedValue = "Save Keychain failed"; return }
+                guard let _ = try? await authContext.evaluatePolicy(
+                    .deviceOwnerAuthentication,
+                    localizedReason: "to allow simulator to access KeyChain"
+                ) else { errMsg.wrappedValue = "Save Keychain failed"; return }
             #endif
             
             let df = DateFormatter()

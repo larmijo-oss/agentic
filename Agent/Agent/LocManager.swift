@@ -15,50 +15,64 @@ struct Location: Decodable {
 @Observable
 final class LocManagerViewModel {
     static let shared = LocManagerViewModel()
-    private init() {}
-    
-    private(set) var location = Location(lat: 0.0, lon: 0.0)
 
-    func setLocation(lat: CLLocationDegrees, lon: CLLocationDegrees) {
-        location.lat = lat
-        location.lon = lon
+    private init() {}
+
+    private(set) var location: Location? = nil
+
+    func setLocation(
+        lat: CLLocationDegrees,
+        lon: CLLocationDegrees
+    ) {
+        guard lat.isFinite,
+              lon.isFinite,
+              (-90...90).contains(lat),
+              (-180...180).contains(lon) else {
+            return
+        }
+
+        location = Location(lat: lat, lon: lon)
     }
 }
 
 final class LocManager: NSObject, CLLocationManagerDelegate {
     static let shared = LocManager()
+
     private let locManager = CLLocationManager()
-    
+    private var updating = false
+
     override private init() {
         super.init()
 
-        // configure the location manager
         locManager.desiredAccuracy = kCLLocationAccuracyBest
         locManager.delegate = self
     }
 
-    // start updates
-    
     func startUpdates() {
-            if locManager.authorizationStatus == .notDetermined {
-                // ask for user permission if undetermined
-                // Be sure to add 'Privacy - Location When In Use Usage Description' to
-                // Info.plist, otherwise location read will fail silently, with (lat/lon = 0)
-                locManager.requestWhenInUseAuthorization()
-            }
-        
-            Task {
-                do {
-                    for try await update in CLLocationUpdate.liveUpdates() {
-                        if let loc = update.location {
-                            LocManagerViewModel.shared.setLocation(
-                                lat: loc.coordinate.latitude,
-                                lon: loc.coordinate.longitude)
-                        }
-                    }
-                } catch {
-                    print(error.localizedDescription)
-                }
-            }
+        guard !updating else { return }
+
+        updating = true
+
+        if locManager.authorizationStatus == .notDetermined {
+            locManager.requestWhenInUseAuthorization()
         }
+
+        Task {
+            do {
+                for try await update in CLLocationUpdate.liveUpdates() {
+                    if let loc = update.location {
+                        LocManagerViewModel.shared.setLocation(
+                            lat: loc.coordinate.latitude,
+                            lon: loc.coordinate.longitude
+                        )
+                    }
+                }
+            } catch {
+                print(error.localizedDescription)
+            }
+
+            self.updating = false
+        }
+    }
 }
+

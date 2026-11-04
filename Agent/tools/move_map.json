@@ -1,0 +1,30 @@
+{
+  "type": "function",
+  "function": {
+    "name": "move_map",
+    "description": "Move the existing map camera to explicit coordinates only when the player asks to see or move the map. Obtain a fresh authorization ticket from get_auth first. Do not call for game completion, giving up, or revealing the answer.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "description": "Target latitude (-90 to 90)"
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Target longitude (-180 to 180)"
+        },
+        "ticket": {
+          "type": "string",
+          "description": "Authorization ticket obtained from get_auth"
+        }
+      },
+      "required": [
+        "latitude",
+        "longitude",
+        "ticket"
+      ]
+    }
+  }
+}
+
