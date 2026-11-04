@@ -419,8 +419,7 @@ async function* yieldSse(
                         }
                         // convey LLM completion stream to client:
                         // yield clean SSE event (key:value line)
-                        yield `data: ${tagline}\n\
-n`
+                        yield `data: ${tagline}\n\n`
 
                     } catch (err: any) {
                         yield `event: error\ndata: ${JSON.stringify(err.message)}\n\n`
