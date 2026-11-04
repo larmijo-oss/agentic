@@ -124,7 +124,32 @@ function initDB() {
 
     }
 
-    return { rwdb, waldb, sqlStatements }
+    
+	const clearHistory = rwdb.transaction((appID: string) => {
+    		rwdb.prepare(`
+        		DELETE FROM calls
+        		WHERE turnID IN (
+            			SELECT turnID
+            			FROM turns
+            			WHERE appID = ?
+        		)
+    		`).run(appID)
+
+    		rwdb.prepare(`
+        		DELETE FROM turns
+     	   		WHERE appID = ?
+    		`).run(appID)
+	})
+
+	return {
+    		rwdb,
+    		waldb,
+    		sqlStatements: {
+        		...sqlStatements,
+        		clearHistory
+    		}
+	}
+
 }
 function waloop(waldb: BetterSqlite3.Database) {
     setInterval(() => {
@@ -191,6 +216,7 @@ const { rwdb, waldb, sqlStatements } = initDB()
         .post("/llmprompt", handlers.llmprompt)
 	.post("/llmchat", handlers.llmchat)
 	.post('/llmtools/', handlers.llmtools) 
+	.post('/llmclear/', handlers.llmclear)
 	.post('/weather/', handlers.weather)
 	.post('/addagent/', handlers.addagent)
        

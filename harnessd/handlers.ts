@@ -7,6 +7,7 @@ import { z as zod } from 'zod'
 import type { FastifyHttp2Instance, FastifyHttp2Reply, FastifyHttp2Request, Http2RouteHandler } from './main.js'
 import { getWeather, type OpenAIToolSchema, RawToolSchema } from './toolbox.js'
 import { randomBytes } from 'crypto'
+import { acquireApp } from './appGate.js'
 
 const RawFunction = zod.object({
     name: zod.string().nullish(),
@@ -448,6 +449,8 @@ export const llmtools: Http2RouteHandler = async function (request, reply) {
         return logErr(request, reply, HttpStatus.BAD_REQUEST, rawRequest.error.message);
     }
     const openAIRequest = rawRequest.data as OpenAIRequest;
+    const releaseApp = await acquireApp(openAIRequest.appID)
+try {
     
     // insert prompt into database or update existing database with tool result
     let turnID = 0
@@ -601,11 +604,50 @@ export const llmtools: Http2RouteHandler = async function (request, reply) {
             reply.raw.destroy(err)
         }
     }
+    } finally {
+    releaseApp()
+}
 }
 
 type AgentAuth = {
     clientID: string
     idToken: string
+}
+
+
+export const llmclear: Http2RouteHandler =
+    async function (request, reply) {
+
+    const body = zod.object({
+        appID: zod.string().min(1)
+    }).safeParse(request.body)
+
+    if (!body.success) {
+        return reply.code(400).send({
+            error: "Invalid appID"
+        })
+    }
+
+    const release = await acquireApp(
+        body.data.appID
+    )
+
+    try {
+        this.sql.clearHistory(body.data.appID)
+
+        return reply.code(200).send({
+            ok: true,
+            cleared: true
+        })
+    } catch (error) {
+        request.log.error(error)
+
+        return reply.code(500).send({
+            error: "Clear failed"
+        })
+    } finally {
+        release()
+    }
 }
 
 export const addagent: Http2RouteHandler = async function (request, reply) {
@@ -631,7 +673,12 @@ export const addagent: Http2RouteHandler = async function (request, reply) {
     const ticket = randomBytes(32).toString('hex')
 
     const now = Math.floor(Date.now() / 1000)
-    const lifetime = Math.min((idInfo.exp - now) + 1, 180) // secs, up to max of 1800, idToken lifetime
+    
+const lifetime = Math.min(
+    (idInfo.exp - now) + 1,
+    Number(process.env.TICKET_LIFETIME_SECONDS ?? 600)
+)
+ // secs, up to max of 1800, idToken lifetime
 
 	// insert ticket to database
     try {

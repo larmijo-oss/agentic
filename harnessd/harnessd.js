@@ -102153,6 +102153,26 @@ function checkAuth(sql, ticket) {
 
 // handlers.ts
 import { randomBytes } from "crypto";
+
+// appGate.ts
+var tails = /* @__PURE__ */ new Map();
+async function acquireApp(appID) {
+  const previous = tails.get(appID) ?? Promise.resolve();
+  let release;
+  const current = new Promise((resolve) => {
+    release = resolve;
+  });
+  tails.set(appID, current);
+  await previous;
+  return () => {
+    if (tails.get(appID) === current) {
+      tails.delete(appID);
+    }
+    release();
+  };
+}
+
+// handlers.ts
 var RawFunction = external_exports.object({
   name: external_exports.string().nullish(),
   arguments: external_exports.string().nullish()
@@ -102427,79 +102447,45 @@ var llmtools = async function(request2, reply) {
     return logErr(request2, reply, import_http_status_codes2.default.BAD_REQUEST, rawRequest.error.message);
   }
   const openAIRequest = rawRequest.data;
-  let turnID = 0;
+  const releaseApp = await acquireApp(openAIRequest.appID);
   try {
-    if (openAIRequest.turnID != null && openAIRequest.turnID > 0) {
-      turnID = openAIRequest.turnID;
-      for (const msg of openAIRequest.messages) {
-        if (msg.role === "tool") {
-          this.sql.updateCall.run(msg.content ?? null, msg.tool_call_id);
+    let turnID = 0;
+    try {
+      if (openAIRequest.turnID != null && openAIRequest.turnID > 0) {
+        turnID = openAIRequest.turnID;
+        for (const msg of openAIRequest.messages) {
+          if (msg.role === "tool") {
+            this.sql.updateCall.run(msg.content ?? null, msg.tool_call_id);
+          }
         }
+      } else {
+        turnID = Number(this.sql.insertTurn.run(openAIRequest.appID, JSON.stringify(openAIRequest.messages)).lastInsertRowid);
       }
-    } else {
-      turnID = Number(this.sql.insertTurn.run(openAIRequest.appID, JSON.stringify(openAIRequest.messages)).lastInsertRowid);
+    } catch (err) {
+      return logErr(request2, reply, import_http_status_codes2.default.INTERNAL_SERVER_ERROR, err.message);
     }
-  } catch (err) {
-    return logErr(request2, reply, import_http_status_codes2.default.INTERNAL_SERVER_ERROR, err.message);
-  }
-  let agentTools;
-  agentTools = upsertAgentTools(this.sql, openAIRequest.appID, openAIRequest.tools);
-  openAIRequest.messages = retrieveHistory(this.sql, openAIRequest.appID);
-  openAIRequest.tools = [...this.toolbox.schemas(), ...agentTools];
-  reply.hijack();
-  reply.raw.setHeader("Content-Type", "text/event-stream");
-  const app = this;
-  async function* conveyCompletion() {
-    let sendNewPrompt = true;
-    const acc = { completion: "", reasoning: "", parallelCalls: /* @__PURE__ */ new Map() };
-    while (sendNewPrompt) {
-      sendNewPrompt = false;
-      const response = await routePrompt(app, request2, reply, openAIRequest);
-      if (response === null) return;
-      yield* yieldSse(response, acc);
-      if (acc.parallelCalls.size > 0) {
-        try {
-          for (const [idx, call] of acc.parallelCalls) {
-            app.sql.insertCall.run(turnID, call.id, idx, call.function.name, call.function.arguments);
-          }
-          const reasoning = !acc.completion ? acc.reasoning : !acc.reasoning ? acc.completion : acc.completion + acc.reasoning;
-          if (reasoning) app.sql.updateReasoning.run(acc.reasoning, turnID);
-        } catch (err) {
-          yield `event: error
-data: ${JSON.stringify(err.message)}
-
-`;
-          return;
-        }
-        sendNewPrompt = true;
-        const toolCalls = [...acc.parallelCalls.values()];
-        const assistantMsg = { role: "assistant", content: acc.reasoning || void 0, tool_calls: toolCalls };
-        openAIRequest.messages.push(assistantMsg);
-        const agentToolCalls = [];
-        for (const call of acc.parallelCalls.values()) {
-          const [toolResult, toolErr] = await app.toolbox.invoke(app, call.function);
-          if (toolResult === void 0 && toolErr === void 0) {
-            agentToolCalls.push({
-              id: call.id,
-              type: "function",
-              function: {
-                name: call.function.name,
-                arguments: call.function.arguments
-              }
-            });
-            sendNewPrompt = false;
-            continue;
-          }
-          const result = toolErr ?? toolResult ?? void 0;
-          if (!result) {
-            yield `event: error
-data: ${JSON.stringify(`${call.function.name}: invalid toolResult: cannot be null or an empty string.`)}
-
-`;
-            return;
-          }
+    let agentTools;
+    agentTools = upsertAgentTools(this.sql, openAIRequest.appID, openAIRequest.tools);
+    openAIRequest.messages = retrieveHistory(this.sql, openAIRequest.appID);
+    openAIRequest.tools = [...this.toolbox.schemas(), ...agentTools];
+    reply.hijack();
+    reply.raw.setHeader("Content-Type", "text/event-stream");
+    const app = this;
+    async function* conveyCompletion() {
+      let sendNewPrompt = true;
+      const acc = { completion: "", reasoning: "", parallelCalls: /* @__PURE__ */ new Map() };
+      while (sendNewPrompt) {
+        sendNewPrompt = false;
+        const response = await routePrompt(app, request2, reply, openAIRequest);
+        if (response === null) return;
+        yield* yieldSse(response, acc);
+        if (acc.parallelCalls.size > 0) {
           try {
-            app.sql.updateCall.run(result, call.id);
+            for (const [idx, call] of acc.parallelCalls) {
+              app.sql.insertCall.run(turnID, call.id, idx, call.function.name, call.function.arguments);
+            }
+            const reasoning = !acc.completion ? acc.reasoning : !acc.reasoning ? acc.completion : acc.completion + acc.reasoning;
+            if (reasoning) app.sql.updateReasoning.run(acc.reasoning, turnID);
           } catch (err) {
             yield `event: error
 data: ${JSON.stringify(err.message)}
@@ -102507,38 +102493,104 @@ data: ${JSON.stringify(err.message)}
 `;
             return;
           }
-          if (sendNewPrompt) {
-            openAIRequest.messages.push({ role: "tool", content: result, tool_call_id: call.id });
-          }
-        }
-        if (!sendNewPrompt) {
-          yield `event: tool_calls
-data: ${JSON.stringify({ turnID, calls: agentToolCalls })}
+          sendNewPrompt = true;
+          const toolCalls = [...acc.parallelCalls.values()];
+          const assistantMsg = { role: "assistant", content: acc.reasoning || void 0, tool_calls: toolCalls };
+          openAIRequest.messages.push(assistantMsg);
+          const agentToolCalls = [];
+          for (const call of acc.parallelCalls.values()) {
+            const [toolResult, toolErr] = await app.toolbox.invoke(app, call.function);
+            if (toolResult === void 0 && toolErr === void 0) {
+              agentToolCalls.push({
+                id: call.id,
+                type: "function",
+                function: {
+                  name: call.function.name,
+                  arguments: call.function.arguments
+                }
+              });
+              sendNewPrompt = false;
+              continue;
+            }
+            const result = toolErr ?? toolResult ?? void 0;
+            if (!result) {
+              yield `event: error
+data: ${JSON.stringify(`${call.function.name}: invalid toolResult: cannot be null or an empty string.`)}
 
 `;
-        }
-        acc.reasoning = "";
-        acc.completion = "";
-        acc.parallelCalls.clear();
-      } else {
-        if (acc.completion || acc.reasoning) try {
-          app.sql.updateTurn.run(acc.completion, acc.reasoning, acc.reasoning, turnID);
-        } catch (err) {
-          yield `event: error
+              return;
+            }
+            try {
+              app.sql.updateCall.run(result, call.id);
+            } catch (err) {
+              yield `event: error
 data: ${JSON.stringify(err.message)}
 
 `;
+              return;
+            }
+            if (sendNewPrompt) {
+              openAIRequest.messages.push({ role: "tool", content: result, tool_call_id: call.id });
+            }
+          }
+          if (!sendNewPrompt) {
+            yield `event: tool_calls
+data: ${JSON.stringify({ turnID, calls: agentToolCalls })}
+
+`;
+          }
+          acc.reasoning = "";
+          acc.completion = "";
+          acc.parallelCalls.clear();
+        } else {
+          if (acc.completion || acc.reasoning) try {
+            app.sql.updateTurn.run(acc.completion, acc.reasoning, acc.reasoning, turnID);
+          } catch (err) {
+            yield `event: error
+data: ${JSON.stringify(err.message)}
+
+`;
+          }
         }
       }
     }
-  }
-  try {
-    await pipeline(Readable.from(conveyCompletion()), reply.raw);
-  } catch (err) {
-    if (err.code !== "ERR_STREAM_PREMATURE_CLOSE" && !reply.raw.writableEnded) {
-      request2.log.error(`llmTools Pipeline Error: ${err.message}`);
-      reply.raw.destroy(err);
+    try {
+      await pipeline(Readable.from(conveyCompletion()), reply.raw);
+    } catch (err) {
+      if (err.code !== "ERR_STREAM_PREMATURE_CLOSE" && !reply.raw.writableEnded) {
+        request2.log.error(`llmTools Pipeline Error: ${err.message}`);
+        reply.raw.destroy(err);
+      }
     }
+  } finally {
+    releaseApp();
+  }
+};
+var llmclear = async function(request2, reply) {
+  const body = external_exports.object({
+    appID: external_exports.string().min(1)
+  }).safeParse(request2.body);
+  if (!body.success) {
+    return reply.code(400).send({
+      error: "Invalid appID"
+    });
+  }
+  const release = await acquireApp(
+    body.data.appID
+  );
+  try {
+    this.sql.clearHistory(body.data.appID);
+    return reply.code(200).send({
+      ok: true,
+      cleared: true
+    });
+  } catch (error61) {
+    request2.log.error(error61);
+    return reply.code(500).send({
+      error: "Clear failed"
+    });
+  } finally {
+    release();
   }
 };
 var addagent = async function(request2, reply) {
@@ -102560,7 +102612,10 @@ var addagent = async function(request2, reply) {
   const creator = idInfo.name ?? "Profile NA";
   const ticket = randomBytes(32).toString("hex");
   const now = Math.floor(Date.now() / 1e3);
-  const lifetime = Math.min(idInfo.exp - now + 1, 180);
+  const lifetime = Math.min(
+    idInfo.exp - now + 1,
+    Number(process.env.TICKET_LIFETIME_SECONDS ?? 600)
+  );
   try {
     const row = this.sql.countExpiredTickets.get(now);
     const expired = (row ? Object.values(row)[0] : 0) ?? 0;
@@ -103386,7 +103441,28 @@ function initDB() {
       `SELECT expiration FROM tickets WHERE ticket = ?`
     )
   };
-  return { rwdb, waldb, sqlStatements };
+  const clearHistory = rwdb.transaction((appID) => {
+    rwdb.prepare(`
+        		DELETE FROM calls
+        		WHERE turnID IN (
+            			SELECT turnID
+            			FROM turns
+            			WHERE appID = ?
+        		)
+    		`).run(appID);
+    rwdb.prepare(`
+        		DELETE FROM turns
+     	   		WHERE appID = ?
+    		`).run(appID);
+  });
+  return {
+    rwdb,
+    waldb,
+    sqlStatements: {
+      ...sqlStatements,
+      clearHistory
+    }
+  };
 }
 function waloop(waldb) {
   setInterval(() => {
@@ -103429,7 +103505,7 @@ try {
     // accept proxy-reported client IP (X-Forwarded-For)
     logger: { level: "error" }
     // log only if server crashes
-  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).decorate("toolbox", new Toolbox()).decorate("googleJWKS", new import_google_auth_library.OAuth2Client()).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmchat", llmchat).post("/llmtools/", llmtools).post("/weather/", weather).post("/addagent/", addagent);
+  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).decorate("toolbox", new Toolbox()).decorate("googleJWKS", new import_google_auth_library.OAuth2Client()).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmchat", llmchat).post("/llmtools/", llmtools).post("/llmclear/", llmclear).post("/weather/", weather).post("/addagent/", addagent);
   app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {
     if (err) {
       console.error(err);
