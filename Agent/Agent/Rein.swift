@@ -10,7 +10,7 @@ import SwiftUI
 private let harness = "https://3.129.88.202"
 private let api = "/llmtools"
 private let model = "qwen3.5:9b"
-private let showThinking = true
+private let showThinking = false
 private let appID = Bundle.main.bundleIdentifier
 private let toolbox = Toolbox()
 private let Json = JSONDecoder()
@@ -78,8 +78,8 @@ struct Rein {
                 buffer.removeAll(keepingCapacity: true)
                 
                 //print("SSE LINE:", line)
-                
-                
+                print("SSE LINE:", String(reflecting: line))
+    
                 if line.isEmpty {
                     // SSE events are delimited by "\n\n"
                     
@@ -117,6 +117,11 @@ struct Rein {
                                                         // OpenAI's `/v1/chat/completions` API requires that
                                                                                     // a serialized JSON object follows a `data:` tag.
                                                                                     let openAIResponse = try Json.decode(OpenAIResponse.self, from: Data(tagline.utf8))
+                                                        
+                                                        print(
+                                                            "DECODED DELTA:",
+                                                            String(describing: openAIResponse.choices?.first?.delta.content)
+                                                        )
                                                                                     
                                                                                     // extract content from choices[0].delta.content.
                                                                                     // OpenAI defaults to generating only one completion
@@ -124,8 +129,10 @@ struct Rein {
                                                                                     // OpenAIRequest.
                                                         if let delta = openAIResponse.choices?.first?.delta {
                                                                                         let content = decoratedContent(from: delta)
-                                                                                        if !content.isEmpty {
-                                                                                            acc.completion.content.append(content)
+                                                            if !content.isEmpty {
+                                                                print("RECEIVED CHUNK:", String(reflecting: content))
+                                                                acc.completion.content.append(content)
+                                                                print("TOTAL RESPONSE:", String(reflecting: acc.completion.content))
                                                                                             if acc.completion.timestamp.isEmpty {
                                                                                                 if let model = openAIResponse.model { acc.completion.role = "assistant (\(model))" }
                                                                                                 let created = openAIResponse.created ?? Date().timeIntervalSince1970
@@ -133,11 +140,17 @@ struct Rein {
                                                                                             }
                                                                                         }
                                                                                     }
-                                                        if let finishReason = openAIResponse.choices?.first?.finish_reason,
-                                                                                       finishReason == "length" || finishReason == "content_filter" {
-                                                                                        acc.errMsg.wrappedValue += "LLM STREAM CUT OFF!"
-                                                                                        sseEvent = .Error
-                                                                                    }
+                                                        if let finishReason = openAIResponse.choices?.first?.finish_reason {
+                                                            print("LLM finish reason:", finishReason)
+
+                                                            if finishReason == "stop" || finishReason == "tool_calls" {
+                                                                acc.finishedNormally = true
+                                                            } else if finishReason == "length" ||
+                                                                      finishReason == "content_filter" {
+                                                                acc.errMsg.wrappedValue +=
+                                                                    "LLM stream cut off: \(finishReason)"
+                                                            }
+                                                        }
                                                                                     
                                                             
                                                         case .Error:
@@ -294,6 +307,16 @@ struct Rein {
                 var acc = SseAccumulator(completion: completion, errMsg: errMsg)
                 do {
                     try await processSse(bytes, &acc)
+                    print("LLM response length:", completion.content.count)
+                    print("LLM response:", completion.content)
+                    print("Finished normally:", acc.finishedNormally)
+                    print("Tool calls:", acc.parallelCalls.count)
+
+                    if !acc.finishedNormally && acc.parallelCalls.isEmpty {
+                        errMsg.wrappedValue =
+                            "The LLM response ended before completion."
+                        return
+                    }
                 } catch {
                     errMsg.wrappedValue = "SSE parsing failed \(error)"
                     completion.content.append("\n\n**\(errMsg.wrappedValue)**\n\n")
@@ -501,6 +524,7 @@ struct SseAccumulator {
     let errMsg: Binding<String>
     var turnID: Int64? = nil
     var parallelCalls = [OpenAIToolCall]()
+    var finishedNormally = false
 }
 
 

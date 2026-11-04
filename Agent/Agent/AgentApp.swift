@@ -127,6 +127,11 @@ final class AppViewModel {
             completion: candidate,
             errMsg: Bindable(self).errMsg
         )
+        print("=== INITIAL HINT DEBUG ===")
+        print("Response:", String(reflecting: candidate.content))
+        print("Error:", errMsg)
+        print("Response length:", candidate.content.count)
+        print("==========================")
 
         if epoch == generation &&
            errMsg.isEmpty &&
@@ -267,6 +272,11 @@ struct AgentApp: App {
                 errMsg: Bindable(vm).errMsg,
                 showOk: Bindable(vm).showOk
             )
+            
+            if vm.showOk {
+                    vm.showOk = false
+                    vm.errMsg = ""
+                }
         }
     }
 

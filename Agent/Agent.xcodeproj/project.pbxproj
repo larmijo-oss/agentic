@@ -21,6 +21,8 @@
 		16ACBC18307F4BB5003B0AFE /* Ticket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16ACBC17307F4BB2003B0AFE /* Ticket.swift */; };
 		16ACBC1A307F4BDB003B0AFE /* SigninView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16ACBC19307F4BD5003B0AFE /* SigninView.swift */; };
 		16ACBC1C309AD719003B0AFE /* move_map.json in Resources */ = {isa = PBXBuildFile; fileRef = 16ACBC1B309AD70F003B0AFE /* move_map.json */; };
+		16ACBC1F309B9AA6003B0AFE /* get_auth.json in Resources */ = {isa = PBXBuildFile; fileRef = 16ACBC1D309B9AA6003B0AFE /* get_auth.json */; };
+		16ACBC20309B9AA6003B0AFE /* get_loc_auth.json in Resources */ = {isa = PBXBuildFile; fileRef = 16ACBC1E309B9AA6003B0AFE /* get_loc_auth.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +41,8 @@
 		16ACBC17307F4BB2003B0AFE /* Ticket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ticket.swift; sourceTree = "<group>"; };
 		16ACBC19307F4BD5003B0AFE /* SigninView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SigninView.swift; sourceTree = "<group>"; };
 		16ACBC1B309AD70F003B0AFE /* move_map.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = move_map.json; sourceTree = "<group>"; };
+		16ACBC1D309B9AA6003B0AFE /* get_auth.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = get_auth.json; sourceTree = "<group>"; };
+		16ACBC1E309B9AA6003B0AFE /* get_loc_auth.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = get_loc_auth.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +105,8 @@
 		165DDF0B3075E89500B76C33 /* tools */ = {
 			isa = PBXGroup;
 			children = (
+				16ACBC1D309B9AA6003B0AFE /* get_auth.json */,
+				16ACBC1E309B9AA6003B0AFE /* get_loc_auth.json */,
 				16ACBC1B309AD70F003B0AFE /* move_map.json */,
 				165DDF0A3075E89500B76C33 /* get_location.json */,
 			);
@@ -172,6 +178,8 @@
 				16ACBC1C309AD719003B0AFE /* move_map.json in Resources */,
 				1647CB48304B100100B9F269 /* Assets.xcassets in Resources */,
 				165DDF0C3075E89500B76C33 /* get_location.json in Resources */,
+				16ACBC1F309B9AA6003B0AFE /* get_auth.json in Resources */,
+				16ACBC20309B9AA6003B0AFE /* get_loc_auth.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
