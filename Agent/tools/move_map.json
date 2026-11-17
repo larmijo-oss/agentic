@@ -2,7 +2,7 @@
   "type": "function",
   "function": {
     "name": "move_map",
-    "description": "Move the existing map camera to explicit coordinates only when the player asks to see or move the map. Obtain a fresh authorization ticket from get_auth first. Do not call for game completion, giving up, or revealing the answer.",
+    "description": "Move the existing map camera to explicit coordinates. Call when the player correctly guesses the secret city or explicitly asks to move the map. Obtain a fresh authorization ticket from get_auth first. Do not call for incorrect guesses.",
     "parameters": {
       "type": "object",
       "properties": {

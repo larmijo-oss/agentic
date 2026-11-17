@@ -10,7 +10,7 @@ import SwiftUI
 private let harness = "https://3.129.88.202"
 private let api = "/llmtools"
 private let model = "qwen3.5:9b"
-private let showThinking = false
+private let showThinking = true
 private let appID = Bundle.main.bundleIdentifier
 private let toolbox = Toolbox()
 private let Json = JSONDecoder()
