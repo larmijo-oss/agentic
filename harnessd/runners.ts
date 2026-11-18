@@ -1,12 +1,54 @@
 import * as fs from 'fs'
 import { parse } from "smol-toml"
 import { z as zod } from "zod"
+import { EmbeddingModel, FlagEmbedding } from 'fastembed'
 const RUNNERS_CONFIG = "/home/ubuntu/agentic/runners.toml"
+const FASTEMBED_CACHE = '/home/ubuntu/agentic/harnessd/fastembed-cache'
+const FASTEMBED_MODELS: Record<string, { model: Exclude<EmbeddingModel, EmbeddingModel.CUSTOM>; dim: number }> = {
+    'BAAI/bge-small-en-v1.5': { model: EmbeddingModel.BGESmallENV15, dim: 384 },
+}
+
+const RawEmbed = zod.object({
+    // defaulted so the local variant is selected by commenting these out
+    api: zod.string().default(''),
+    model: zod.string().default(''),
+    local: zod.string().nullish(),
+    dim: zod.number()
+})
+
+// to hold options for cloud or local runners
+type EmbedRunner =
+    | { api: LlmRunnerAPI; model: string; dim: number }
+    | { api: null; dim: number; session: FlagEmbedding }
 
 const RawRunnerAPI = zod.object({
     url: zod.string(),
     key: zod.string()
 })
+
+async function loadLocalEmbed(local: { model: string; dim: number }): Promise<EmbedRunner | null> {
+    const mapped = FASTEMBED_MODELS[local.model]
+    if (!mapped) {
+        console.log(`Embed runner INACTIVE: unknown local model '${local.model}'`)
+        return null
+    }
+    if (mapped.dim !== local.dim) {
+        console.log(`Embed runner INACTIVE: dim mismatch: '${local.model}' embeds to ${mapped.dim}, config declares ${local.dim}`)
+        return null
+    }
+    try {
+        const session = await Promise.race([
+            FlagEmbedding.init({ model: mapped.model, cacheDir: FASTEMBED_CACHE }),
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('local embed init timed out')), 120_000).unref()),
+        ])
+        console.log(`Embed runner ACTIVE: ${local.model} (dim ${local.dim})`)
+        return { api: null, dim: local.dim, session }
+    } catch (err) {
+        console.log(`Embed runner INACTIVE: ${err}`)
+        return null
+    }
+}
 
 type LlmRunnerAPI = zod.infer<typeof RawRunnerAPI>
 
@@ -23,12 +65,15 @@ interface LlmRunner {
 } 
 const RawRunners = zod.object({
     apis: zod.record(zod.string(), RawRunnerAPI).default({}),
-    runners: zod.array(RawRunner).default([])
+    runners: zod.array(RawRunner).default([]),
+    embed: RawEmbed.nullish()
     })
 
 export class LlmRunners implements Iterable<LlmRunner> {
     private runners: LlmRunner[] = []
     private local: LlmRunner | null = null; // ';' required to avoid enjambment
+    embed: EmbedRunner | null = null;
+    private readonly pendingLocalEmbed: { model: string; dim: number } | null = null;
 
     // The iterator that powers the `for (const runner of runners)` loop:
     // Implemented using the Schwartzian Transform (Decorate-Sort-Undecorate).
@@ -39,7 +84,7 @@ export class LlmRunners implements Iterable<LlmRunner> {
         // Each HTTP-request gets a different ordered list, effecting the
         // round-robin selection of runners across HTTP-requests.
         const scored = this.runners.map(runner => {
-            const score = -Math.log(Math.random()) / (runner.weight > 0.0 ? runner.weight : 1e-9)
+            const score = -Math.log(1.0 - Math.random()) / (runner.weight > 0.0 ? runner.weight : 1e-9)
             return { score, runner } // decorate
         })
 
@@ -112,6 +157,31 @@ export class LlmRunners implements Iterable<LlmRunner> {
                 weight: 1.0
             }
         }
+
+	 const rawEmbed = rawRunners.embed
+        if (rawEmbed && rawEmbed.dim > 0 && rawEmbed.local) {
+            if (rawEmbed.api || rawEmbed.model) {
+                console.log(`Embed runner: local model '${rawEmbed.local}' set, ignoring api/model`)
+            }
+            this.pendingLocalEmbed = { model: rawEmbed.local, dim: rawEmbed.dim }
+        } else {
+            const embedNamed = rawEmbed && rawEmbed.dim > 0 && rawEmbed.api && rawEmbed.model
+            if (embedNamed) {
+                const embedApi = apis.get(rawEmbed.api)
+                if (embedApi) {
+                    this.embed = { api: embedApi, model: rawEmbed.model, dim: rawEmbed.dim }
+                    console.log(`Embed runner ACTIVE: ${rawEmbed.model} (dim ${rawEmbed.dim})`)
+                } else {
+                    console.log(`Embed runner INACTIVE: unknown or inactive api '${rawEmbed.api}'`)
+                }
+            } else {
+                console.log(`Embed runner INACTIVE: semantic recall disabled`)
+            }
+        }
+    }
+    async loadEmbed(): Promise<void> {
+        if (!this.pendingLocalEmbed) return
+        this.embed = await loadLocalEmbed(this.pendingLocalEmbed)
     }
 
     

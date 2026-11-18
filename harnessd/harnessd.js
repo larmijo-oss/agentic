@@ -64723,7 +64723,7 @@ var import_undici2 = __toESM(require_undici(), 1);
 import { readFileSync as readFileSync2 } from "node:fs";
 
 // handlers.ts
-var import_http_status_codes = __toESM(require_cjs(), 1);
+var import_http_status_codes2 = __toESM(require_cjs(), 1);
 var import_undici = __toESM(require_undici(), 1);
 import * as readline from "readline/promises";
 import { Readable } from "stream";
@@ -83595,7 +83595,385 @@ function date4(params) {
   return _coercedDate(ZodDate, params);
 }
 
+// structured.ts
+var CompletionSummary = external_exports.strictObject({
+  completion: external_exports.string().describe("The complete response text for the user."),
+  summary: external_exports.string().describe(
+    'A concise, deanaphorized summary for semantic retrieval: restate what the user asked and what was concluded, using the explicit entity and topic names that appear in the conversation. No pronouns (it, they, this, that) and no back-references \u2014 every sentence must make sense alone, as a standalone record in a vector store. Only names actually present in the conversation; no invented entities, no boilerplate framing ("The user asked about... and the assistant explained...").'
+  )
+});
+function completionSummaryResponseFormat() {
+  const schema = { ...external_exports.toJSONSchema(CompletionSummary) };
+  delete schema.$schema;
+  return {
+    type: "json_schema",
+    json_schema: { name: "completion_summary", strict: true, schema }
+  };
+}
+var structuredResponseFormat = completionSummaryResponseFormat();
+var LexPhase = {
+  ObjectStart: 0,
+  // expect '{'
+  Key: 1,
+  // expect the opening '"' of a property name
+  KeyName: 2,
+  // capturing property-name chars
+  Colon: 3,
+  // expect ':' after a property name
+  Value: 4,
+  // expect the value's opening '"'
+  InString: 5,
+  // inside a string value; target classifies spans
+  AfterValue: 6,
+  // expect ',' (next property) or '}' (end)
+  Done: 7
+  // swallow the rest
+};
+var LexTarget = { Completion: 0, Summary: 1 };
+var LEXER_KEY_CAP = 16;
+var TRANSITIONS = {
+  [LexPhase.ObjectStart]: { "{": LexPhase.Key },
+  [LexPhase.Key]: { '"': LexPhase.KeyName },
+  [LexPhase.Colon]: { ":": LexPhase.Value },
+  [LexPhase.Value]: { '"': LexPhase.InString },
+  [LexPhase.AfterValue]: { ",": LexPhase.Key, "}": LexPhase.Done }
+};
+var CompletionLexer = class {
+  phase = LexPhase.ObjectStart;
+  target = LexTarget.Completion;
+  inEscape = false;
+  key = "";
+  completionSeen = false;
+  summarySeen = false;
+  fallback = false;
+  feed(fragment, sink) {
+    if (this.fallback) return fragment;
+    let i = 0;
+    while (i < fragment.length) {
+      switch (this.phase) {
+        case LexPhase.ObjectStart:
+        case LexPhase.Key:
+        case LexPhase.Colon:
+        case LexPhase.Value:
+        case LexPhase.AfterValue: {
+          switch (fragment[i]) {
+            case " ":
+            case "	":
+            case "\n":
+            case "\r":
+              i++;
+              break;
+            default: {
+              const next = TRANSITIONS[this.phase]?.[fragment[i]];
+              if (next === void 0) return this.latch(fragment, i);
+              switch (this.phase) {
+                case LexPhase.Key:
+                  this.key = "";
+                  break;
+                case LexPhase.Value:
+                  this.inEscape = false;
+                  break;
+              }
+              this.phase = next;
+              i++;
+            }
+          }
+          break;
+        }
+        case LexPhase.KeyName: {
+          const from = Math.max(i - this.key.length - 1, 0);
+          if (fragment[i] === '"') {
+            if (this.completionSeen && this.key === "completion")
+              return this.latch(fragment, from);
+            if (this.summarySeen && this.key === "summary")
+              return this.latch(fragment, from);
+            if (this.key === "completion") {
+              this.completionSeen = true;
+              this.target = LexTarget.Completion;
+            } else if (this.key === "summary") {
+              this.summarySeen = true;
+              this.target = LexTarget.Summary;
+            } else {
+              return this.latch(fragment, from);
+            }
+            this.phase = LexPhase.Colon;
+            i++;
+            break;
+          }
+          if (this.key.length === LEXER_KEY_CAP)
+            return this.latch(fragment, from);
+          this.key += fragment.charAt(i);
+          i++;
+          break;
+        }
+        case LexPhase.InString: {
+          const spanStart = i;
+          let closed = false;
+          while (i < fragment.length) {
+            if (this.inEscape) {
+              this.inEscape = false;
+              i++;
+              continue;
+            }
+            const at1 = fragment.indexOf("\\", i);
+            const at2 = fragment.indexOf('"', i);
+            const at = at1 === -1 ? at2 : at2 === -1 ? at1 : Math.min(at1, at2);
+            if (at === -1) {
+              i = fragment.length;
+              break;
+            }
+            if (fragment[at] === "\\") {
+              this.inEscape = true;
+              i = at + 1;
+            } else {
+              this.emit(spanStart, at, fragment, sink);
+              this.phase = LexPhase.AfterValue;
+              i = at + 1;
+              closed = true;
+              break;
+            }
+          }
+          if (!closed) this.emit(spanStart, i, fragment, sink);
+          break;
+        }
+        case LexPhase.Done:
+          i = fragment.length;
+          break;
+      }
+    }
+    return null;
+  }
+  latch(fragment, from) {
+    this.fallback = true;
+    return fragment.substring(from);
+  }
+  emit(start, end, fragment, sink) {
+    if (start < end) {
+      sink(this.target, fragment.substring(start, end));
+    }
+  }
+};
+function pushEscape(ch, frame) {
+  switch (ch) {
+    case "n":
+      frame.push("\n");
+      break;
+    case "r":
+      frame.push("\r");
+      break;
+    case "t":
+      frame.push("	");
+      break;
+    case '"':
+      frame.push('"');
+      break;
+    case "\\":
+      frame.push("\\");
+      break;
+    case "/":
+      frame.push("/");
+      break;
+    case "b":
+      frame.push("\b");
+      break;
+    case "f":
+      frame.push("\f");
+      break;
+    case "u":
+      frame.push("\\u");
+      break;
+    // \uXXXX passes through verbatim into the client stream and the DB capture — never decoded
+    default:
+      frame.push("\\", ch);
+  }
+}
+function escapeFrame(span, frame, pending) {
+  let rest = span;
+  if (pending) {
+    if (rest.length > 0) {
+      pending = false;
+      pushEscape(rest.charAt(0), frame);
+      rest = rest.substring(1);
+    }
+  }
+  for (; ; ) {
+    const at = rest.indexOf("\\");
+    if (at === -1) {
+      frame.push(rest);
+      return pending;
+    }
+    frame.push(rest.substring(0, at));
+    if (at + 1 < rest.length) {
+      pushEscape(rest.charAt(at + 1), frame);
+      rest = rest.substring(at + 2);
+    } else {
+      return true;
+    }
+  }
+}
+var Capture = class {
+  text = [];
+  pending = false;
+  push(span) {
+    this.pending = escapeFrame(span, this.text, this.pending);
+  }
+  flushPending() {
+    if (!this.pending) return false;
+    this.text.push("\\");
+    this.pending = false;
+    return true;
+  }
+};
+
+// pensieve.ts
+var import_http_status_codes = __toESM(require_cjs(), 1);
+var MAX_RECENT_TURNS = 20;
+var MAX_FALLBACK_TURNS = 200;
+var MAX_VECTOR_LEG_CANDIDATES = 48;
+var MAX_RECALL_ITEMS = 24;
+var MAX_RECALL_CHARS = 16e3;
+var MAX_RECALL_ITEM_CHARS = 4e3;
+function promptPlaintext(promptJson) {
+  let parsed;
+  try {
+    parsed = JSON.parse(promptJson.toString());
+  } catch {
+    return "";
+  }
+  if (!Array.isArray(parsed)) return "";
+  const utterances = [];
+  for (const raw of parsed) {
+    if (raw === null || typeof raw !== "object") continue;
+    const message = raw;
+    if (message.role !== "user") continue;
+    const content = message.content;
+    if (typeof content === "string") {
+      if (content) utterances.push(content);
+    } else if (Array.isArray(content)) {
+      for (const part of content) {
+        if (part === null || typeof part !== "object") continue;
+        const text = part.text;
+        if (typeof text === "string" && text) utterances.push(text);
+      }
+    }
+  }
+  return utterances.join("\n");
+}
+var localEmbedChain = Promise.resolve();
+var embedLongInputWarned = false;
+async function embedText(app, text) {
+  const embed = app.runners.embed;
+  if (!embed) throw new Error("no embedding runner configured");
+  const inputCap = embed.api === null ? 2e3 : 24e3;
+  if (!embedLongInputWarned && text.length > inputCap) {
+    embedLongInputWarned = true;
+    console.warn(`embed input exceeds the ~${inputCap}-char embedder context; the tail is truncated or rejected by the embedder, not by this check`);
+  }
+  if (embed.api === null) {
+    const run = localEmbedChain.then(async () => ((await embed.session.embed([text]).next()).value ?? [])[0]);
+    localEmbedChain = run.then(() => void 0, () => void 0);
+    const embedding = await Promise.race([
+      run,
+      new Promise((_, reject) => setTimeout(() => reject(new Error("local embed timed out")), 15e3).unref())
+    ]);
+    return acceptEmbedding(embed.dim, embedding);
+  }
+  const fullUrl = new URL(`${embed.api.url}/v1/embeddings`);
+  const headers = { "Content-Type": "application/json" };
+  if (embed.api.key) headers["Authorization"] = `Bearer ${embed.api.key}`;
+  const response = await app.client.request({
+    origin: fullUrl.origin,
+    path: fullUrl.pathname + fullUrl.search,
+    method: "POST",
+    headers,
+    body: JSON.stringify({ model: embed.model, input: [text] }),
+    headersTimeout: 15e3,
+    bodyTimeout: 3e5
+  });
+  if (response.statusCode !== import_http_status_codes.default.OK) {
+    response.body?.destroy();
+    throw new Error(`embedding runner returned ${response.statusCode}`);
+  }
+  const parsed = await response.body.json();
+  return acceptEmbedding(embed.dim, parsed.data?.[0]?.embedding);
+}
+function acceptEmbedding(dim, embedding) {
+  if (!embedding || embedding.length !== dim) {
+    throw new Error(`embedding dim ${embedding?.length ?? 0}, expected ${dim}`);
+  }
+  const norm = Math.sqrt(embedding.reduce((sum, v) => sum + v * v, 0));
+  if (!Number.isFinite(norm) || norm <= 0) throw new Error(`degenerate embedding norm ${norm}`);
+  for (let i = 0; i < embedding.length; i++) embedding[i] = embedding[i] / norm;
+  return embedding;
+}
+function blobFromUnit(embedding) {
+  const blob = Buffer.alloc(embedding.length * 4);
+  embedding.forEach((value, idx) => blob.writeFloatLE(value, idx * 4));
+  return blob;
+}
+function capRunes(text, cap) {
+  let builder = "";
+  let count = 0;
+  for (const ch of text) {
+    if (count === cap) break;
+    builder += ch;
+    count++;
+  }
+  return [builder, count];
+}
+async function recallBlock(app, appID, prompt) {
+  let recall = [];
+  try {
+    const gate = app.sql.recallGate.get(appID, MAX_RECENT_TURNS + 1, MAX_RECENT_TURNS);
+    if (gate.count <= MAX_RECENT_TURNS) {
+      return { recall, historyFloor: 0 };
+    }
+    recall = await recallTurns(app, appID, prompt, gate.scanFloor);
+    if (recall.length > 0) {
+      return { recall, historyFloor: gate.scanFloor };
+    }
+  } catch (err) {
+    console.error(`recall failed (serving the fallback window): ${err.message}`);
+  }
+  return { recall, historyFloor: app.sql.recallGate.get(appID, MAX_FALLBACK_TURNS + 1, MAX_FALLBACK_TURNS).scanFloor };
+}
+async function recallTurns(app, appID, prompt, scanFloor) {
+  const embedding = app.runners.embed === null || app.sql.recall === null ? [] : await embedText(app, prompt).catch((err) => {
+    console.error(`vector scan unavailable (bounded fallback window will serve): ${err.message}`);
+    return [];
+  });
+  if (embedding.length === 0) return [];
+  const vecIDs = app.sql.recall.selectVectorLeg.all(blobFromUnit(embedding), appID, scanFloor, MAX_VECTOR_LEG_CANDIDATES).map((row) => row.rowid);
+  if (vecIDs.length === 0) return [];
+  const ids = vecIDs.slice(0, MAX_RECALL_ITEMS);
+  const rows = app.sql.hydrateRecall.all(JSON.stringify(ids));
+  const byID = new Map(rows.map((row) => [row.turnID, row]));
+  const recall = [];
+  let remaining = MAX_RECALL_CHARS;
+  for (const turnID of ids) {
+    const row = byID.get(turnID);
+    if (row === void 0) continue;
+    const [prompt2, cost] = capRunes(promptPlaintext(row.prompt), MAX_RECALL_ITEM_CHARS);
+    if (cost === 0 || cost > remaining) continue;
+    remaining -= cost;
+    recall.push({ turnID, prompt: prompt2 });
+  }
+  return recall;
+}
+function recallMessage(recall) {
+  return {
+    role: "system",
+    content: "Semantic search results from earlier turns in this conversation matching current prompt:\n" + recall.map((item) => `- [turn ${item.turnID}] ${item.prompt}
+`).join("")
+  };
+}
+
 // handlers.ts
+var MAX_HISTORY_BYTES = 64e3;
+var MAX_EMBED_ITEM_CHARS = 4e3;
+var EMBED_CONCURRENCY = 4;
+var freeEmbedSlots = EMBED_CONCURRENCY;
+var embedWaiters = [];
 var RawMessage = external_exports.object({
   role: external_exports.string(),
   content: external_exports.string().nullish()
@@ -83603,13 +83981,44 @@ var RawMessage = external_exports.object({
 var RawRequest = external_exports.object({
   appID: external_exports.string(),
   model: external_exports.string(),
-  messages: external_exports.array(RawMessage),
-  stream: external_exports.boolean()
+  stream: external_exports.boolean(),
+  max_tokens: external_exports.number().optional(),
+  messages: external_exports.unknown(),
+  // UPDATE to allow for raw body
+  response_format: external_exports.unknown().nullish()
 });
-async function top(request, reply) {
-  return reply.code(200).send({
-    message: "UM EECS agentic harnessd"
+var pendingEmbeds = /* @__PURE__ */ new Set();
+function embedTurnText(app, turnID, text) {
+  const task = embedSlot(async () => {
+    try {
+      const embedding = await embedText(app, text);
+      app.sql.updateEmbedding.run(blobFromUnit(embedding), turnID);
+      app.snapshotDirty.value = true;
+    } catch (err) {
+      console.error(`turn embedding failed for turn ${turnID}: ${err.message}`);
+    }
   });
+  pendingEmbeds.add(task);
+  task.finally(() => {
+    pendingEmbeds.delete(task);
+  }).catch(() => {
+  });
+}
+async function drainEmbeds(timeoutMs) {
+  await Promise.race([
+    Promise.allSettled([...pendingEmbeds]),
+    new Promise((done) => setTimeout(done, timeoutMs).unref())
+  ]);
+}
+async function embedSlot(run) {
+  while (freeEmbedSlots === 0) await new Promise((wakeup) => embedWaiters.push(wakeup));
+  freeEmbedSlots--;
+  try {
+    await run();
+  } finally {
+    freeEmbedSlots++;
+    embedWaiters.shift()?.();
+  }
 }
 var logOk = (request, runner, model) => {
   console.info(`runner: ${runner}:${model}`);
@@ -83668,7 +84077,7 @@ async function routePrompt(app, request, reply, openAIRequest) {
         request,
         runner.api.url,
         runner.model,
-        import_http_status_codes.default.PROCESSING,
+        import_http_status_codes2.default.PROCESSING,
         `Connection error: ${error61.message}. Trying another one.`
       );
       continue;
@@ -83677,62 +84086,144 @@ async function routePrompt(app, request, reply, openAIRequest) {
   return logErr(
     request,
     reply,
-    import_http_status_codes.default.SERVICE_UNAVAILABLE,
+    import_http_status_codes2.default.SERVICE_UNAVAILABLE,
     "All available LLM providers are rate limited or offline."
   );
 }
-var llmchat = async function(request, reply) {
+var llmsearch = async function(request, reply) {
   const rawRequest = RawRequest.safeParse(request.body);
   if (!rawRequest.success) {
-    return logErr(request, reply, import_http_status_codes.default.BAD_REQUEST, rawRequest.error.message);
+    return logErr(request, reply, import_http_status_codes2.default.UNPROCESSABLE_ENTITY, rawRequest.error.message);
   }
   const openAIRequest = rawRequest.data;
+  if (openAIRequest.messages === void 0) {
+    return logErr(request, reply, import_http_status_codes2.default.UNPROCESSABLE_ENTITY, "messages must be set");
+  }
+  if (openAIRequest.stream !== true) {
+    return logErr(request, reply, import_http_status_codes2.default.UNPROCESSABLE_ENTITY, "stream must be true");
+  }
   let turnID = 0;
   try {
     turnID = Number(this.sql.insertTurn.run(openAIRequest.appID, Buffer.from(JSON.stringify(openAIRequest.messages))).lastInsertRowid);
   } catch (err) {
-    return logErr(request, reply, import_http_status_codes.default.INTERNAL_SERVER_ERROR, err.message);
+    return logErr(request, reply, import_http_status_codes2.default.INTERNAL_SERVER_ERROR, err.message);
   }
+  const snapshotJson = JSON.stringify(request.body.messages);
+  const [prompt] = capRunes(promptPlaintext(snapshotJson), MAX_RECALL_ITEM_CHARS);
+  const isStructured = openAIRequest.response_format == null;
   try {
-    openAIRequest.messages = retrieveHistory(this.sql, openAIRequest.appID);
+    const { recall, historyFloor } = await recallBlock(this, openAIRequest.appID, prompt);
+    openAIRequest.messages = retrieveHistory(this.sql, openAIRequest.appID, historyFloor, turnID);
+    if (recall.length > 0) openAIRequest.messages.unshift(recallMessage(recall));
   } catch (err) {
-    return logErr(request, reply, import_http_status_codes.default.INTERNAL_SERVER_ERROR, err.message);
+    this.sql.updateDegrade.run(turnID);
+    return logErr(request, reply, import_http_status_codes2.default.INTERNAL_SERVER_ERROR, err.message);
+  }
+  if (isStructured) openAIRequest.response_format = structuredResponseFormat;
+  const response = await routePrompt(this, request, reply, openAIRequest);
+  if (response === null) {
+    this.sql.updateDegrade.run(turnID);
+    return;
   }
   reply.hijack();
   reply.raw.setHeader("Content-Type", "text/event-stream");
-  const response = await routePrompt(this, request, reply, openAIRequest);
-  if (response === null) {
-    return;
-  }
+  const acc = {
+    completion: new Capture(),
+    summary: new Capture(),
+    reasoning: "",
+    finishReason: null,
+    model: null,
+    lexer: new CompletionLexer()
+  };
+  let streamError = null;
   try {
-    const acc = { completion: "", reasoning: "" };
     await pipeline(
-      // pipeline() will take care of all of the above.
-      Readable.from(yieldSse(response, acc)),
-      reply.raw
+      Readable.from(yieldSse(response, acc, isStructured)),
+      reply.raw,
+      // end: false keeps the socket open through the stream-end write, so
+      // a failed write can still yield a final SSE error event
+      { end: false }
     );
   } catch (err) {
+    response.body.destroy();
+    streamError = err;
     if (err.code !== "ERR_STREAM_PREMATURE_CLOSE" && !reply.raw.writableEnded) {
-      logErr(request, reply, err.code, `Pipeline Error: ${err.message}`);
       console.error(`Pipeline Error: ${err.message}`);
       reply.raw.destroy(err);
     }
   }
+  acc.completion.flushPending();
+  acc.summary.flushPending();
+  const completion = acc.completion.text.join("");
+  const summary = acc.summary.text.join("");
+  const completed = acc.finishReason === "stop" ? 1 : 0;
+  try {
+    this.sql.updateTurn.run(completion, summary, acc.reasoning, completed, turnID);
+    if (completed === 1 && this.runners.embed) {
+      const trimmed = summary.trim();
+      if (!trimmed) {
+        const completionRunes = [...completion].length;
+        if (completionRunes > MAX_EMBED_ITEM_CHARS)
+          console.warn(`turn ${turnID}: no summary; embedding the first ${MAX_EMBED_ITEM_CHARS} of ${completionRunes} chars`);
+      }
+      const text = trimmed || capRunes(completion, MAX_EMBED_ITEM_CHARS)[0];
+      if (text && prompt) void embedTurnText(this, turnID, text);
+    }
+  } catch (err) {
+    console.error(`SQLite turn result update error: ${err.message}`);
+    if (streamError === null && !reply.raw.writableEnded) {
+      reply.raw.write(`event: error
+data: ${JSON.stringify(err.message)}
+
+`);
+    }
+  }
+  if (streamError === null && !reply.raw.writableEnded) reply.raw.end();
   return;
 };
-function retrieveHistory(sql, appID) {
-  const turns = sql.selectTurns.all(appID);
+function retrieveHistory(sql, appID, minTurnID, currentTurnID) {
+  const sizes = sql.selectTurnSizes.all(appID, minTurnID, currentTurnID);
+  let total = sizes.reduce((sum, { bytes }) => sum + bytes, 0);
+  let drop = 0;
+  while (drop + 1 < sizes.length && total > MAX_HISTORY_BYTES) {
+    total -= sizes[drop].bytes;
+    drop++;
+  }
+  const survivors = sizes.slice(drop).map(({ turnID }) => turnID);
+  const turns = sql.selectTurnsByID.all(JSON.stringify(survivors));
   const history = [];
   for (const turn of turns) {
-    if (turn.prompt) history.push(...external_exports.array(RawMessage).parse(JSON.parse(turn.prompt)));
-    if (turn.completion) {
-      const content = turn.reasoning ? turn.reasoning + "\n\n" + turn.completion : turn.completion;
+    if (turn.prompt) {
+      try {
+        const parsed = JSON.parse(turn.prompt.toString());
+        if (!Array.isArray(parsed)) throw new Error("snapshot is not a message list");
+        for (const message of parsed) history.push(message);
+      } catch {
+      }
+    }
+    if (turn.completion || turn.reasoning) {
+      const content = turn.completion && turn.reasoning ? turn.reasoning + "\n\n" + turn.completion : turn.completion ?? turn.reasoning;
       history.push({ role: "assistant", content });
     }
   }
   return history;
 }
-async function* yieldSse(response, acc) {
+function textPacket(frame, model) {
+  if (!frame) return null;
+  const packet = JSON.stringify({
+    choices: [{ delta: { content: frame } }],
+    ...model ? { model } : {}
+  });
+  return `data: ${packet}
+
+`;
+}
+async function* yieldSse(response, acc, isStructured) {
+  let upstreamReadFailure = null;
+  const sink = (target, data) => {
+    if (target === LexTarget.Completion) acc.completion.push(data);
+    else acc.summary.push(data);
+  };
   const reader = readline.createInterface({
     input: response.body,
     crlfDelay: Infinity
@@ -83756,16 +84247,42 @@ async function* yieldSse(response, acc) {
         if (sseEvent === "Message") {
           try {
             const openAIResponse = JSON.parse(tagline);
+            if (openAIResponse.model) acc.model = openAIResponse.model;
             const choice = openAIResponse.choices?.[0];
-            const delta = choice?.delta;
-            if (delta?.content) {
-              acc.completion += delta.content;
-            } else if (delta?.reasoning_content) {
-              acc.reasoning += delta.reasoning_content;
-            } else if (delta?.reasoning) {
-              acc.reasoning += delta.reasoning;
+            if (choice?.finish_reason) {
+              acc.finishReason = choice.finish_reason;
             }
-            yield `data: ${tagline}
+            const delta = choice?.delta;
+            let suppressTagline = false;
+            if (isStructured && delta?.content) {
+              suppressTagline = true;
+              if (acc.lexer.fallback) {
+                acc.completion.text.push(delta.content);
+                const rawEvent = textPacket(delta.content, acc.model);
+                if (rawEvent !== null) yield rawEvent;
+              } else {
+                const mark = acc.completion.text.length;
+                const fell = acc.lexer.feed(delta.content, sink);
+                const mainEvent = textPacket(acc.completion.text.slice(mark).join(""), acc.model);
+                if (mainEvent !== null) yield mainEvent;
+                if (fell !== null) {
+                  if (acc.completion.flushPending()) yield textPacket("\\", acc.model);
+                  acc.summary.flushPending();
+                  acc.completion.text.push(fell);
+                  yield `event: error
+data: ${JSON.stringify("structured output schema violation; passing raw text through")}
+
+`;
+                  const restEvent = textPacket(fell, acc.model);
+                  if (restEvent !== null) yield restEvent;
+                }
+              }
+            } else {
+              if (delta?.content) acc.completion.text.push(delta.content);
+              else if (delta?.reasoning_content) acc.reasoning += delta.reasoning_content;
+              else if (delta?.reasoning) acc.reasoning += delta.reasoning;
+            }
+            if (!suppressTagline) yield `data: ${tagline}
 
 `;
           } catch (err) {
@@ -83784,8 +84301,22 @@ data: ${tagline}
         sseEvent = tagline;
       }
     }
+  } catch (err) {
+    if (err.code === "ERR_STREAM_PREMATURE_CLOSE") throw err;
+    upstreamReadFailure = err.message;
+    response.body.destroy();
   } finally {
     reader.close();
+  }
+  if (acc.completion.flushPending()) {
+    const flushEvent = textPacket("\\", acc.model);
+    if (flushEvent !== null) yield flushEvent;
+  }
+  if (upstreamReadFailure !== null) {
+    yield `event: error
+data: ${JSON.stringify(`upstream read failed: ${upstreamReadFailure}`)}
+
+`;
   }
 }
 
@@ -84438,11 +84969,45 @@ function parse3(toml, { maxDepth = 1e3, integersAsBigInt } = {}) {
 }
 
 // runners.ts
+import { EmbeddingModel, FlagEmbedding } from "fastembed";
 var RUNNERS_CONFIG = "/home/ubuntu/agentic/runners.toml";
+var FASTEMBED_CACHE = "/home/ubuntu/agentic/harnessd/fastembed-cache";
+var FASTEMBED_MODELS = {
+  "BAAI/bge-small-en-v1.5": { model: EmbeddingModel.BGESmallENV15, dim: 384 }
+};
+var RawEmbed = external_exports.object({
+  // defaulted so the local variant is selected by commenting these out
+  api: external_exports.string().default(""),
+  model: external_exports.string().default(""),
+  local: external_exports.string().nullish(),
+  dim: external_exports.number()
+});
 var RawRunnerAPI = external_exports.object({
   url: external_exports.string(),
   key: external_exports.string()
 });
+async function loadLocalEmbed(local) {
+  const mapped = FASTEMBED_MODELS[local.model];
+  if (!mapped) {
+    console.log(`Embed runner INACTIVE: unknown local model '${local.model}'`);
+    return null;
+  }
+  if (mapped.dim !== local.dim) {
+    console.log(`Embed runner INACTIVE: dim mismatch: '${local.model}' embeds to ${mapped.dim}, config declares ${local.dim}`);
+    return null;
+  }
+  try {
+    const session = await Promise.race([
+      FlagEmbedding.init({ model: mapped.model, cacheDir: FASTEMBED_CACHE }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("local embed init timed out")), 12e4).unref())
+    ]);
+    console.log(`Embed runner ACTIVE: ${local.model} (dim ${local.dim})`);
+    return { api: null, dim: local.dim, session };
+  } catch (err) {
+    console.log(`Embed runner INACTIVE: ${err}`);
+    return null;
+  }
+}
 var RawRunner = external_exports.object({
   api: external_exports.string(),
   model: external_exports.string(),
@@ -84450,17 +85015,20 @@ var RawRunner = external_exports.object({
 });
 var RawRunners = external_exports.object({
   apis: external_exports.record(external_exports.string(), RawRunnerAPI).default({}),
-  runners: external_exports.array(RawRunner).default([])
+  runners: external_exports.array(RawRunner).default([]),
+  embed: RawEmbed.nullish()
 });
 var LlmRunners = class {
   runners = [];
   local = null;
   // ';' required to avoid enjambment
+  embed = null;
+  pendingLocalEmbed = null;
   // The iterator that powers the `for (const runner of runners)` loop:
   // Implemented using the Schwartzian Transform (Decorate-Sort-Undecorate).
   [Symbol.iterator]() {
     const scored = this.runners.map((runner) => {
-      const score = -Math.log(Math.random()) / (runner.weight > 0 ? runner.weight : 1e-9);
+      const score = -Math.log(1 - Math.random()) / (runner.weight > 0 ? runner.weight : 1e-9);
       return { score, runner };
     });
     scored.sort((a, b) => a.score - b.score);
@@ -84518,19 +85086,41 @@ var LlmRunners = class {
         weight: 1
       };
     }
+    const rawEmbed = rawRunners.embed;
+    if (rawEmbed && rawEmbed.dim > 0 && rawEmbed.local) {
+      if (rawEmbed.api || rawEmbed.model) {
+        console.log(`Embed runner: local model '${rawEmbed.local}' set, ignoring api/model`);
+      }
+      this.pendingLocalEmbed = { model: rawEmbed.local, dim: rawEmbed.dim };
+    } else {
+      const embedNamed = rawEmbed && rawEmbed.dim > 0 && rawEmbed.api && rawEmbed.model;
+      if (embedNamed) {
+        const embedApi = apis.get(rawEmbed.api);
+        if (embedApi) {
+          this.embed = { api: embedApi, model: rawEmbed.model, dim: rawEmbed.dim };
+          console.log(`Embed runner ACTIVE: ${rawEmbed.model} (dim ${rawEmbed.dim})`);
+        } else {
+          console.log(`Embed runner INACTIVE: unknown or inactive api '${rawEmbed.api}'`);
+        }
+      } else {
+        console.log(`Embed runner INACTIVE: semantic recall disabled`);
+      }
+    }
+  }
+  async loadEmbed() {
+    if (!this.pendingLocalEmbed) return;
+    this.embed = await loadLocalEmbed(this.pendingLocalEmbed);
   }
 };
 
 // main.ts
 import Database from "better-sqlite3";
+import { createRequire as createNodeRequire } from "node:module";
+var requireCJS = createNodeRequire(import.meta.url);
+var { getExtensionPath } = requireCJS("@sqliteai/sqlite-vector");
 var HARNESS_DB_PATH = "/home/ubuntu/agentic/harnessd/harnessd.db";
-function initDB() {
+function initDB(vectorDim) {
   const rwdb = new Database(HARNESS_DB_PATH, {
-    fileMustExist: true
-    // SQLite errors out instead of creating a db if it doesn't exist.
-  });
-  const waldb = new Database(HARNESS_DB_PATH, {
-    // dedicated db connection just for the background worker
     fileMustExist: true
     // SQLite errors out instead of creating a db if it doesn't exist.
   });
@@ -84542,44 +85132,107 @@ function initDB() {
         PRAGMA journal_size_limit = 104857600; -- 100 MB
         PRAGMA temp_store = MEMORY;
         PRAGMA wal_autocheckpoint = 0;
+	PRAGMA read_uncommitted = TRUE;
     `);
-  waldb.exec(`
-        PRAGMA busy_timeout = 5000; -- 5 secs
-        PRAGMA synchronous = NORMAL;
-        PRAGMA journal_size_limit = 104857600; -- 100 MB
-        PRAGMA wal_autocheckpoint = 0;
-    `);
-  waloop(waldb);
+  let vectorOptions = null;
+  if (vectorDim > 0) {
+    vectorOptions = `type=FLOAT32,dimension=${vectorDim},distance=COSINE,normalized=1,qtype=TURBO,qbits=4`;
+    try {
+      const extensionPath = getExtensionPath();
+      rwdb.loadExtension(extensionPath);
+      rwdb.prepare(`SELECT vector_init('turns','embedding', ?)`).get(vectorOptions);
+    } catch (error61) {
+      console.error("sqlite-vector unavailable, semantic recall disabled:", error61);
+      vectorOptions = null;
+    }
+  }
   const sqlStatements = {
     insertTurn: rwdb.prepare(
       `INSERT INTO turns (appID, prompt) VALUES (?, ?)`
     ),
-    updateTurn: rwdb.prepare(
-      `UPDATE turns SET completion = NULLIF(?, ''), reasoning = CASE WHEN ? = '' THEN reasoning ELSE COALESCE(reasoning || ' ', '') || ? END WHERE turnID = ?`
+    selectTurnSizes: rwdb.prepare(
+      `SELECT turnID, length(prompt) + COALESCE(length(reasoning), 0) + COALESCE(length(completion), 0) AS bytes FROM turns WHERE appID = ? AND turnID >= ? AND (turnID = ? OR completed = 1) ORDER BY turnID ASC`
     ),
-    selectTurns: rwdb.prepare(
-      `SELECT turnID, CAST(prompt AS TEXT) AS prompt, reasoning, completion FROM turns WHERE appID = ? ORDER BY turnID ASC`
-    )
-  };
-  return { rwdb, waldb, sqlStatements };
-}
-function waloop(waldb) {
-  setInterval(() => {
-    try {
-      waldb.pragma("optimize=0x10002");
-      waldb.pragma("wal_checkpoint(PASSIVE)");
-      const freePages = waldb.pragma("freelist_count", { simple: true });
-      if (freePages > 25600) {
-        waldb.pragma("incremental_vacuum(256)");
-      }
-    } catch (error61) {
-      console.error("SQLite checkpointing or optimization failed:", error61);
+    selectTurnsByID: rwdb.prepare(
+      `SELECT turnID, prompt, reasoning, completion FROM turns WHERE turnID IN (SELECT value FROM json_each(?)) ORDER BY turnID ASC`
+    ),
+    // updated updateTurn to include summary
+    updateTurn: rwdb.prepare(
+      `UPDATE turns SET completion = NULLIF(?, ''), summary = NULLIF(?, ''), reasoning = NULLIF(?, ''), completed = ? WHERE turnID = ?`
+    ),
+    updateDegrade: rwdb.prepare(
+      `UPDATE turns SET completed = 0 WHERE turnID = ?`
+    ),
+    recallGate: rwdb.prepare(
+      `WITH last AS (
+                 SELECT turnID, ROW_NUMBER() OVER (ORDER BY turnID DESC) AS rn
+                 FROM turns WHERE appID = ? AND completed = 1 ORDER BY turnID DESC LIMIT ?
+             )
+             SELECT COUNT(*) AS count, COALESCE(MIN(CASE WHEN rn <= ? THEN turnID END), 0) AS scanFloor FROM last`
+    ),
+    hydrateRecall: rwdb.prepare(
+      `SELECT turnID, prompt FROM turns WHERE turnID IN (SELECT value FROM json_each(?))`
+    ),
+    updateEmbedding: rwdb.prepare(
+      `UPDATE turns SET embedding= ? WHERE turnID = ?`
+    ),
+    // selectVectorLeg is prepared only when vector_init succeeded
+    recall: vectorOptions === null ? null : {
+      selectVectorLeg: rwdb.prepare(
+        `SELECT v.rowid AS rowid
+                 FROM vector_quantize_scan('turns','embedding', ?) AS v
+                 JOIN turns t ON t.turnID = v.rowid
+                 WHERE t.appID = ? AND t.turnID < ?
+                 ORDER BY v.distance
+                 LIMIT ?`
+      )
     }
+  };
+  return { rwdb, sqlStatements };
+}
+function waloop(db, vectorEnabled, snapshotDirty) {
+  function swept(label, run) {
+    try {
+      run();
+    } catch (error61) {
+      console.error(`${label} failed:`, error61);
+    }
+  }
+  const quantize = vectorEnabled ? db.prepare(`SELECT vector_quantize('turns','embedding', ?)`) : null;
+  if (quantize) rebuildVectorSnapshot(quantize, snapshotDirty);
+  const janitor = db.prepare(
+    `UPDATE turns SET completed = 0 WHERE completed IS NULL AND prompt_ts < unixepoch() - 600`
+  );
+  setInterval(() => {
+    if (quantize) rebuildVectorSnapshot(quantize, snapshotDirty);
+    swept("turn janitor sweep", () => janitor.run());
+    swept("PRAGMA optimize", () => db.pragma("optimize=0x10002"));
+    swept("WAL PASSIVE checkpoint", () => db.pragma("wal_checkpoint(PASSIVE)"));
+    swept("PRAGMA freelist_count", () => {
+      const freePages = db.pragma("freelist_count", { simple: true });
+      if (freePages > 6400) {
+        db.pragma("incremental_vacuum(64)");
+      }
+    });
   }, 6e4).unref();
 }
+function rebuildVectorSnapshot(quantize, dirty) {
+  if (!dirty.value) return;
+  dirty.value = false;
+  try {
+    quantize.get("qtype=TURBO,qbits=4");
+  } catch (error61) {
+    dirty.value = true;
+    console.error("vector_quantize failed:", error61);
+  }
+}
 try {
-  const { rwdb, waldb, sqlStatements } = initDB();
-  onShutdown(rwdb, waldb);
+  const runners = new LlmRunners();
+  await runners.loadEmbed();
+  const { rwdb, sqlStatements } = initDB(runners.embed?.dim ?? 0);
+  const snapshotDirty = { value: true };
+  waloop(rwdb, sqlStatements.recall !== null, snapshotDirty);
+  onShutdown(rwdb);
   const client = new import_undici2.Agent({
     connect: { timeout: 5e3 },
     // dead destination
@@ -84604,7 +85257,7 @@ try {
     // accept proxy-reported client IP (X-Forwarded-For)
     logger: { level: "error" }
     // log only if server crashes
-  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", new LlmRunners()).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmchat", llmchat).post("/", top);
+  }).decorate("logRequest", logRequest).logRequest().decorate("client", client).decorate("runners", runners).decorate("snapshotDirty", snapshotDirty).decorate("sql", sqlStatements).post("/llmprompt", llmprompt).post("/llmsearch", llmsearch);
   app.listen({ host: "0.0.0.0", port: 443 }, (err, addr) => {
     if (err) {
       console.error(err);
@@ -84631,8 +85284,8 @@ function logRequest() {
   return this;
 }
 var isShuttingDown = false;
-function onShutdown(rwdb, waldb) {
-  const signalHandler = (signal, exitCode = 0) => {
+async function onShutdown(rwdb) {
+  const signalHandler = async (signal, exitCode = 0) => {
     if (isShuttingDown) return;
     isShuttingDown = true;
     const cleanupTimeout = setTimeout(() => {
@@ -84640,9 +85293,9 @@ function onShutdown(rwdb, waldb) {
       process.exit(1);
     }, 3e3);
     cleanupTimeout.unref();
+    await drainEmbeds(5e3);
     try {
       rwdb.close();
-      waldb.close();
     } catch (dbErr) {
       console.error(`Error closing dbs: ${dbErr}`);
     } finally {
